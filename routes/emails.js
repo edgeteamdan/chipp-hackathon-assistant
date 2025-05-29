@@ -4,6 +4,33 @@ const axios = require('axios');
 const { generateToken, requireAuth } = require('../utils/jwt');
 const router = express.Router();
 
+// Utility function to decode HTML entities
+const decodeHtmlEntities = (text) => {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
+  return text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&#x60;/g, '`')
+    .replace(/&#x3D;/g, '=')
+    .replace(/&apos;/g, "'")
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    .replace(/&hellip;/g, '...')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–');
+};
+
 // Utility function to sanitize text for safe JSON transmission
 const sanitizeText = (text) => {
   if (!text || typeof text !== 'string') {
@@ -89,14 +116,26 @@ const extractEmailBody = (payload) => {
     // Clean up HTML tags if present
     body = body.replace(/<[^>]*>/g, '');
 
-    // Remove HTML entities
+    // Remove HTML entities - comprehensive list
     body = body
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&#x2F;/g, '/')
+      .replace(/&#x60;/g, '`')
+      .replace(/&#x3D;/g, '=')
+      .replace(/&apos;/g, "'")
+      .replace(/&lsquo;/g, "'")
+      .replace(/&rsquo;/g, "'")
+      .replace(/&ldquo;/g, '"')
+      .replace(/&rdquo;/g, '"')
+      .replace(/&hellip;/g, '...')
+      .replace(/&mdash;/g, '—')
+      .replace(/&ndash;/g, '–');
 
     // Clean up excessive whitespace and normalize line endings
     body = body
@@ -159,9 +198,9 @@ router.get('/recent', isAuthenticated, async (req, res) => {
 
       emails.push({
         id: message.id,
-        subject,
-        from,
-        snippet: email.data.snippet,
+        subject: decodeHtmlEntities(subject),
+        from: decodeHtmlEntities(from),
+        snippet: decodeHtmlEntities(email.data.snippet),
         body,
         date: new Date(parseInt(email.data.internalDate)).toLocaleString()
       });

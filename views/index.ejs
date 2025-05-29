@@ -1,3 +1,19 @@
+<%
+// Helper function to decode HTML entities for display
+function decodeHtmlEntities(text) {
+  if (!text) return '';
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&#x60;/g, '`')
+    .replace(/&#x3D;/g, '=');
+}
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -734,15 +750,15 @@
           <!-- Gmail-style header row: sender, subject, time -->
           <div class="email-header-row">
             <div class="email-meta">
-              <div class="email-from"><%= email.from.replace('From: ', '') %></div>
-              <div class="email-subject"><%= email.subject %></div>
+              <div class="email-from"><%- decodeHtmlEntities(email.from.replace('From: ', '')) %></div>
+              <div class="email-subject"><%- decodeHtmlEntities(email.subject) %></div>
             </div>
             <div class="email-date"><%= email.date %></div>
           </div>
 
           <!-- Gmail-style content row: snippet on left, actions on right -->
           <div class="email-content-row">
-            <div class="email-snippet"><%= email.snippet %></div>
+            <div class="email-snippet"><%- decodeHtmlEntities(email.snippet) %></div>
 
             <div class="email-actions">
               <div id="email-<%= email.id %>-actions">
@@ -1417,11 +1433,11 @@
         emailCard.innerHTML = `
           <div class="email-content">
             <div class="email-header">
-              <div class="email-subject">${escapeHtml(email.subject)}</div>
+              <div class="email-subject">${safeDecodeForDisplay(email.subject)}</div>
               <div class="email-date">${escapeHtml(email.date)}</div>
             </div>
-            <div class="email-from">From: ${escapeHtml(email.from)}</div>
-            <div class="email-snippet">${escapeHtml(email.snippet)}</div>
+            <div class="email-from">From: ${safeDecodeForDisplay(email.from)}</div>
+            <div class="email-snippet">${safeDecodeForDisplay(email.snippet)}</div>
           </div>
           <div class="email-actions">
             <div id="email-${email.id}-actions">
@@ -1437,6 +1453,23 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // Function to decode HTML entities for display
+    function decodeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      return div.textContent || div.innerText || '';
+    }
+
+    // Function to safely decode and then escape HTML for display
+    function safeDecodeForDisplay(text) {
+      if (!text) return '';
+      // First decode any HTML entities
+      const decoded = decodeHtml(text);
+      // Then escape any remaining HTML for safe display
+      return escapeHtml(decoded);
     }
 
     // Function to update JWT cookie for Vercel compatibility
