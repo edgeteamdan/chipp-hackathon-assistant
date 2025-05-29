@@ -164,6 +164,45 @@
       ✅ Settings saved successfully! Your credentials are stored locally in your browser.
     </div>
 
+    <!-- Import Options -->
+    <div class="import-section" style="margin-bottom: 32px; padding: 24px; background: rgba(255, 255, 255, 0.7); border-radius: 12px; border-left: 4px solid #10B981;">
+      <h3 style="margin: 0 0 16px 0; color: #374151;">🚀 Quick Import Options</h3>
+
+      <!-- .env File Import -->
+      <div class="import-option" style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 8px 0; color: #374151;">📄 Import from .env Format</h4>
+        <p style="margin: 0 0 12px 0; color: #6B7280; font-size: 14px;">Paste your .env file content to auto-populate all fields:</p>
+        <textarea id="env-import" placeholder="CHIPP_API_KEY=live_xxxxxxxx
+GOOGLE_CLIENT_ID=xxxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxx
+CLICKUP_CLIENT_ID=XXXXXXXX
+CLICKUP_CLIENT_SECRET=XXXXXXXX" style="width: 100%; height: 120px; padding: 12px; border: 2px solid #E5E7EB; border-radius: 8px; font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"></textarea>
+        <button type="button" onclick="importFromEnv()" class="btn" style="margin-top: 8px;">📥 Import from .env</button>
+      </div>
+
+      <!-- JSON Import -->
+      <div class="import-option" style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 8px 0; color: #374151;">📋 Import from JSON</h4>
+        <p style="margin: 0 0 12px 0; color: #6B7280; font-size: 14px;">Paste JSON configuration:</p>
+        <textarea id="json-import" placeholder='{
+  "chippApiKey": "live_xxxxxxxx",
+  "googleClientId": "xxxxxxxxx.apps.googleusercontent.com",
+  "googleClientSecret": "GOCSPX-xxxxxxxx",
+  "clickupClientId": "XXXXXXXX",
+  "clickupClientSecret": "XXXXXXXX"
+}' style="width: 100%; height: 100px; padding: 12px; border: 2px solid #E5E7EB; border-radius: 8px; font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;"></textarea>
+        <button type="button" onclick="importFromJson()" class="btn" style="margin-top: 8px;">📥 Import from JSON</button>
+      </div>
+
+      <!-- File Import -->
+      <div class="import-option">
+        <h4 style="margin: 0 0 8px 0; color: #374151;">📁 Import from File</h4>
+        <p style="margin: 0 0 12px 0; color: #6B7280; font-size: 14px;">Upload a .env, .json, or .txt file with your credentials:</p>
+        <input type="file" id="file-import" accept=".env,.json,.txt" style="margin-bottom: 8px;">
+        <button type="button" onclick="importFromFile()" class="btn" style="margin-left: 8px;">📥 Import from File</button>
+      </div>
+    </div>
+
     <form id="settings-form">
       <div class="section-title">🤖 Chipp.ai Configuration</div>
       <div class="form-group">
@@ -208,6 +247,8 @@
 
       <div style="margin-top: 32px;">
         <button type="submit" class="btn">💾 Save Settings</button>
+        <button type="button" class="btn btn-secondary" onclick="testConfiguration()">🧪 Test Configuration</button>
+        <button type="button" class="btn btn-secondary" onclick="exportSettings()">📤 Export Settings</button>
         <button type="button" class="btn btn-secondary" onclick="clearSettings()">🗑️ Clear All</button>
       </div>
     </form>
@@ -285,6 +326,236 @@
       setTimeout(() => {
         successDiv.style.display = 'none';
       }, 3000);
+    }
+
+    // Import from .env format
+    function importFromEnv() {
+      const envText = document.getElementById('env-import').value.trim();
+      if (!envText) {
+        alert('Please paste your .env file content first.');
+        return;
+      }
+
+      try {
+        const settings = {};
+        const lines = envText.split('\n');
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine && !trimmedLine.startsWith('#')) {
+            const [key, ...valueParts] = trimmedLine.split('=');
+            const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
+
+            switch (key.trim()) {
+              case 'CHIPP_API_KEY':
+                settings.chippApiKey = value;
+                break;
+              case 'GOOGLE_CLIENT_ID':
+                settings.googleClientId = value;
+                break;
+              case 'GOOGLE_CLIENT_SECRET':
+                settings.googleClientSecret = value;
+                break;
+              case 'CLICKUP_CLIENT_ID':
+                settings.clickupClientId = value;
+                break;
+              case 'CLICKUP_CLIENT_SECRET':
+                settings.clickupClientSecret = value;
+                break;
+            }
+          }
+        }
+
+        populateForm(settings);
+        showSuccessMessage('✅ Settings imported from .env format!');
+
+        // Clear the import textarea
+        document.getElementById('env-import').value = '';
+
+      } catch (error) {
+        alert('Error parsing .env format: ' + error.message);
+      }
+    }
+
+    // Import from JSON format
+    function importFromJson() {
+      const jsonText = document.getElementById('json-import').value.trim();
+      if (!jsonText) {
+        alert('Please paste your JSON configuration first.');
+        return;
+      }
+
+      try {
+        const settings = JSON.parse(jsonText);
+        populateForm(settings);
+        showSuccessMessage('✅ Settings imported from JSON!');
+
+        // Clear the import textarea
+        document.getElementById('json-import').value = '';
+
+      } catch (error) {
+        alert('Error parsing JSON: ' + error.message);
+      }
+    }
+
+    // Import from file
+    function importFromFile() {
+      const fileInput = document.getElementById('file-import');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a file first.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+
+        try {
+          if (file.name.endsWith('.json')) {
+            const settings = JSON.parse(content);
+            populateForm(settings);
+            showSuccessMessage('✅ Settings imported from JSON file!');
+          } else {
+            // Treat as .env format
+            document.getElementById('env-import').value = content;
+            importFromEnv();
+          }
+
+          // Clear file input
+          fileInput.value = '';
+
+        } catch (error) {
+          alert('Error reading file: ' + error.message);
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    // Helper function to populate form fields
+    function populateForm(settings) {
+      if (settings.chippApiKey) document.getElementById('chipp-api-key').value = settings.chippApiKey;
+      if (settings.googleClientId) document.getElementById('google-client-id').value = settings.googleClientId;
+      if (settings.googleClientSecret) document.getElementById('google-client-secret').value = settings.googleClientSecret;
+      if (settings.clickupClientId) document.getElementById('clickup-client-id').value = settings.clickupClientId;
+      if (settings.clickupClientSecret) document.getElementById('clickup-client-secret').value = settings.clickupClientSecret;
+    }
+
+    // Export settings
+    function exportSettings() {
+      const settings = getStoredSettings();
+
+      if (!settings.chippApiKey && !settings.googleClientId && !settings.clickupClientId) {
+        alert('No settings to export. Please configure your credentials first.');
+        return;
+      }
+
+      // Create export options
+      const format = prompt('Export format:\n1. JSON\n2. .env\n\nEnter 1 or 2:', '1');
+
+      if (format === '1') {
+        exportAsJson(settings);
+      } else if (format === '2') {
+        exportAsEnv(settings);
+      } else if (format !== null) {
+        alert('Invalid format. Please enter 1 for JSON or 2 for .env');
+      }
+    }
+
+    function exportAsJson(settings) {
+      const jsonData = JSON.stringify(settings, null, 2);
+      downloadFile('autotask-ai-config.json', jsonData, 'application/json');
+    }
+
+    function exportAsEnv(settings) {
+      const envData = `# AutoTask AI Configuration
+# Generated on ${new Date().toISOString()}
+
+CHIPP_API_KEY=${settings.chippApiKey || ''}
+GOOGLE_CLIENT_ID=${settings.googleClientId || ''}
+GOOGLE_CLIENT_SECRET=${settings.googleClientSecret || ''}
+CLICKUP_CLIENT_ID=${settings.clickupClientId || ''}
+CLICKUP_CLIENT_SECRET=${settings.clickupClientSecret || ''}`;
+
+      downloadFile('autotask-ai-config.env', envData, 'text/plain');
+    }
+
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showSuccessMessage(`✅ Settings exported as ${filename}!`);
+    }
+
+    // Test configuration
+    function testConfiguration() {
+      const settings = {
+        chippApiKey: document.getElementById('chipp-api-key').value,
+        googleClientId: document.getElementById('google-client-id').value,
+        googleClientSecret: document.getElementById('google-client-secret').value,
+        clickupClientId: document.getElementById('clickup-client-id').value,
+        clickupClientSecret: document.getElementById('clickup-client-secret').value
+      };
+
+      let results = [];
+      let allValid = true;
+
+      // Test Chipp API Key
+      if (settings.chippApiKey) {
+        if (settings.chippApiKey.startsWith('live_')) {
+          results.push('✅ Chipp API Key: Valid format');
+        } else {
+          results.push('❌ Chipp API Key: Should start with "live_"');
+          allValid = false;
+        }
+      } else {
+        results.push('⚠️ Chipp API Key: Not provided');
+        allValid = false;
+      }
+
+      // Test Google OAuth
+      if (settings.googleClientId && settings.googleClientSecret) {
+        if (settings.googleClientId.includes('.apps.googleusercontent.com')) {
+          results.push('✅ Google OAuth: Valid Client ID format');
+        } else {
+          results.push('❌ Google OAuth: Invalid Client ID format');
+          allValid = false;
+        }
+
+        if (settings.googleClientSecret.startsWith('GOCSPX-')) {
+          results.push('✅ Google OAuth: Valid Client Secret format');
+        } else {
+          results.push('⚠️ Google OAuth: Client Secret format may be incorrect');
+        }
+      } else {
+        results.push('❌ Google OAuth: Client ID and Secret required');
+        allValid = false;
+      }
+
+      // Test ClickUp OAuth
+      if (settings.clickupClientId && settings.clickupClientSecret) {
+        results.push('✅ ClickUp OAuth: Client ID and Secret provided');
+      } else {
+        results.push('❌ ClickUp OAuth: Client ID and Secret required');
+        allValid = false;
+      }
+
+      // Show results
+      const resultMessage = results.join('\n');
+      const summary = allValid ?
+        '🎉 All configurations look good!' :
+        '⚠️ Some configurations need attention.';
+
+      alert(`Configuration Test Results:\n\n${resultMessage}\n\n${summary}`);
     }
 
     // Handle form submission
