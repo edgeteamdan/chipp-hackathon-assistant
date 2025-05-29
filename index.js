@@ -1,10 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const path = require('path');
+const { authenticateToken } = require('./utils/jwt');
 const authRoutes = require('./routes/auth');
 const emailRoutes = require('./routes/emails');
-const clickupConfigRoutes = require('./routes/clickup-config');
 const configRoutes = require('./routes/config');
 const clientAuthRoutes = require('./routes/client-auth');
 
@@ -15,47 +15,23 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'autotask-secret-key-for-development',
-  resave: true, // Force session save even if not modified
-  saveUninitialized: true, // Save empty sessions to establish session ID
-  cookie: {
-    secure: false, // Set to true if using HTTPS in production
-    httpOnly: true, // Prevent XSS attacks
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax', // CSRF protection
-    path: '/' // Ensure cookie is available for all paths
-  },
-  name: 'autotask.sid', // Custom session name
-  rolling: true // Reset expiration on each request
-}));
+app.use(cookieParser());
+app.use(authenticateToken); // JWT authentication middleware
 
-// Session debugging middleware
+// JWT debugging middleware
 app.use((req, res, next) => {
-  const sessionId = req.sessionID;
-  const hasUser = !!req.session.user;
-  const hasTokens = !!req.session.tokens;
-  const hasClickUp = !!req.session.clickup;
   const cookieHeader = req.get('Cookie');
-  const sessionCookie = cookieHeader ? cookieHeader.includes('autotask.sid') : false;
+  const hasAuthCookie = cookieHeader ? cookieHeader.includes('authToken') : false;
 
-  console.log(`🔍 Session Debug [${req.method} ${req.path}]:`, {
-    sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
-    hasUser,
-    hasTokens,
-    hasClickUp,
-    sessionCookie,
+  console.log(`🔍 JWT Debug [${req.method} ${req.path}]:`, {
+    isAuthenticated: req.isAuthenticated,
+    userEmail: req.user?.email || 'none',
+    hasAuthCookie,
     cookieCount: cookieHeader ? cookieHeader.split(';').length : 0,
     userAgent: req.get('User-Agent')?.substring(0, 50) + '...'
   });
 
-  // Force session save on every request to ensure persistence
-  req.session.save((err) => {
-    if (err) {
-      console.error('❌ Session save error:', err);
-    }
-    next();
-  });
+  next();
 });
 
 // View engine
@@ -65,17 +41,24 @@ app.set('views', path.join(__dirname, 'views'));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/emails', emailRoutes);
-app.use('/clickup', clickupConfigRoutes);
 app.use('/config', configRoutes);
 app.use('/client-auth', clientAuthRoutes);
 
 // Home route
 app.get('/', (req, res) => {
+  console.log('🏠 Home route - User data:', {
+    hasUser: !!req.user,
+    userEmail: req.user?.email,
+    hasEmails: !!req.user?.emails,
+    emailCount: req.user?.emails?.length || 0,
+    userKeys: req.user ? Object.keys(req.user) : []
+  });
+
   res.render('index', {
-    user: req.session.user || null,
-    emails: req.session.emails || [],
+    user: req.user || null,
+    emails: req.user?.emails || [],
     error: req.query.error || null,
-    clickup: req.session.clickup || null,
+    clickup: req.user?.clickup || null,
     clickupAuth: req.query.clickup_auth || null
   });
 });

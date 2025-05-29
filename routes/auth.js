@@ -1,6 +1,7 @@
 const express = require('express');
 const { google } = require('googleapis');
 const axios = require('axios');
+const { generateToken } = require('../utils/jwt');
 const router = express.Router();
 
 // OAuth2 setup
@@ -43,16 +44,27 @@ router.get('/google/callback', async (req, res) => {
 
     const userInfo = await oauth2.userinfo.get();
 
-    // Store in session
-    req.session.tokens = tokens;
-    req.session.user = {
+    // Create JWT token with user data
+    const tokenPayload = {
       id: userInfo.data.id,
       email: userInfo.data.email,
       name: userInfo.data.name,
-      picture: userInfo.data.picture
+      picture: userInfo.data.picture,
+      tokens: tokens
     };
 
+    const jwtToken = generateToken(tokenPayload);
+
+    // Set JWT token as HTTP-only cookie
+    res.cookie('authToken', jwtToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
     console.log(`✅ User authenticated: ${userInfo.data.email}`);
+    console.log(`🔒 JWT token generated and set as cookie`);
     res.redirect('/');
   } catch (error) {
     console.error('❌ Error during authentication:', error);
@@ -60,19 +72,23 @@ router.get('/google/callback', async (req, res) => {
   }
 });
 
-// Logout
+// Logout (JWT-based)
 router.get('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Error destroying session:', err);
-    }
-    res.redirect('/');
+  // Clear the JWT token cookie
+  res.clearCookie('authToken', {
+    httpOnly: true,
+    secure: false, // Set to true in production with HTTPS
+    sameSite: 'lax',
+    path: '/'
   });
+
+  console.log('🔓 User logged out - JWT token cleared');
+  res.redirect('/');
 });
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated (JWT-based)
 const isAuthenticated = (req, res, next) => {
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   next();
@@ -98,7 +114,7 @@ router.get('/clickup/callback', async (req, res) => {
   const { code } = req.query;
 
   // Check if user is authenticated (required for ClickUp integration)
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     console.error('❌ User not authenticated for ClickUp callback');
     return res.redirect('/?error=auth_required');
   }
@@ -141,14 +157,28 @@ router.get('/clickup/callback', async (req, res) => {
     const teams = teamsResponse.data.teams || [];
     console.log(`📋 Found ${teams.length} ClickUp teams`);
 
-    // Store ClickUp data in session
-    req.session.clickup = {
-      access_token,
-      teams,
-      configured: false
+    // Update JWT token with ClickUp data
+    const updatedPayload = {
+      ...req.user,
+      clickup: {
+        access_token,
+        teams,
+        configured: false
+      }
     };
 
+    const newJwtToken = generateToken(updatedPayload);
+
+    // Update JWT token cookie
+    res.cookie('authToken', newJwtToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
     console.log('✅ ClickUp authentication successful');
+    console.log('🔒 JWT token updated with ClickUp data');
     res.redirect('/?clickup_auth=success');
 
   } catch (error) {

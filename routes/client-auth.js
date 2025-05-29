@@ -1,6 +1,7 @@
 const express = require('express');
 const { google } = require('googleapis');
 const axios = require('axios');
+const { generateToken, requireAuth } = require('../utils/jwt');
 const router = express.Router();
 
 // Generate Google OAuth URL with client-provided credentials
@@ -75,30 +76,32 @@ router.get('/google/callback', async (req, res) => {
 
     const userInfo = await oauth2.userinfo.get();
 
-    // Store in session with client credentials
-    req.session.tokens = tokens;
-    req.session.user = {
+    // Create JWT token with user data and credentials
+    const tokenPayload = {
       id: userInfo.data.id,
       email: userInfo.data.email,
       name: userInfo.data.name,
-      picture: userInfo.data.picture
-    };
-    req.session.clientCredentials = {
-      googleClientId,
-      googleClientSecret
-    };
-
-    // Explicitly save session to ensure persistence
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Error saving session:', err);
-        return res.redirect('/?error=session_save_failed');
+      picture: userInfo.data.picture,
+      tokens: tokens,
+      clientCredentials: {
+        googleClientId,
+        googleClientSecret
       }
+    };
 
-      console.log(`✅ User authenticated with client credentials: ${userInfo.data.email}`);
-      console.log(`🔒 Session saved with ID: ${req.sessionID}`);
-      res.redirect('/');
+    const jwtToken = generateToken(tokenPayload);
+
+    // Set JWT token as HTTP-only cookie
+    res.cookie('authToken', jwtToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
+
+    console.log(`✅ User authenticated with client credentials: ${userInfo.data.email}`);
+    console.log(`🔒 JWT token generated and set as cookie`);
+    res.redirect('/');
   } catch (error) {
     console.error('❌ Error during client authentication:', error);
     res.redirect('/?error=auth_failed');
@@ -113,7 +116,7 @@ router.post('/clickup/url', (req, res) => {
     return res.status(400).json({ error: 'ClickUp Client ID required' });
   }
 
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     return res.status(401).json({ error: 'Google authentication required first' });
   }
 
@@ -138,7 +141,7 @@ router.post('/clickup/url', (req, res) => {
 router.get('/clickup/callback', async (req, res) => {
   const { code } = req.query;
 
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     return res.redirect('/?error=auth_required');
   }
 
@@ -147,12 +150,12 @@ router.get('/clickup/callback', async (req, res) => {
   }
 
   try {
-    // Get client credentials from session or request
-    const clickupClientId = req.session.pendingClickUpAuth?.clientId;
-    const clickupClientSecret = req.session.pendingClickUpAuth?.clientSecret;
+    // Get client credentials from JWT token
+    const clickupClientId = req.user.pendingClickUpAuth?.clientId;
+    const clickupClientSecret = req.user.pendingClickUpAuth?.clientSecret;
 
     if (!clickupClientId || !clickupClientSecret) {
-      throw new Error('ClickUp credentials not found in session');
+      throw new Error('ClickUp credentials not found in token');
     }
 
     // Exchange code for access token
@@ -182,27 +185,32 @@ router.get('/clickup/callback', async (req, res) => {
 
     const teams = teamsResponse.data.teams || [];
 
-    // Store ClickUp data in session
-    req.session.clickup = {
-      access_token,
-      teams,
-      configured: false
+    // Update JWT token with ClickUp data
+    const updatedPayload = {
+      ...req.user,
+      clickup: {
+        access_token,
+        teams,
+        configured: false
+      }
     };
 
     // Clear pending auth
-    delete req.session.pendingClickUpAuth;
+    delete updatedPayload.pendingClickUpAuth;
 
-    // Explicitly save session to ensure persistence
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Error saving ClickUp session:', err);
-        return res.redirect('/?error=clickup_session_save_failed');
-      }
+    const newJwtToken = generateToken(updatedPayload);
 
-      console.log('✅ ClickUp authentication successful with client credentials');
-      console.log(`🔒 ClickUp session saved with ID: ${req.sessionID}`);
-      res.redirect('/?clickup_auth=success');
+    // Update JWT token cookie
+    res.cookie('authToken', newJwtToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
+
+    console.log('✅ ClickUp authentication successful with client credentials');
+    console.log(`🔒 JWT token updated with ClickUp data`);
+    res.redirect('/?clickup_auth=success');
 
   } catch (error) {
     console.error('❌ Error during ClickUp client authentication:', error);
@@ -218,31 +226,36 @@ router.post('/clickup/prepare', (req, res) => {
     return res.status(400).json({ error: 'ClickUp credentials required' });
   }
 
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     return res.status(401).json({ error: 'Google authentication required first' });
   }
 
-  // Store credentials temporarily for the OAuth flow
-  req.session.pendingClickUpAuth = {
-    clientId: clickupClientId,
-    clientSecret: clickupClientSecret
+  // Update JWT token with pending ClickUp credentials
+  const updatedPayload = {
+    ...req.user,
+    pendingClickUpAuth: {
+      clientId: clickupClientId,
+      clientSecret: clickupClientSecret
+    }
   };
 
-  // Explicitly save session to ensure persistence
-  req.session.save((err) => {
-    if (err) {
-      console.error('❌ Error saving ClickUp preparation session:', err);
-      return res.status(500).json({ error: 'Failed to save session' });
-    }
+  const newJwtToken = generateToken(updatedPayload);
 
-    console.log(`🔒 ClickUp credentials prepared and session saved with ID: ${req.sessionID}`);
-    res.json({ success: true, message: 'ClickUp credentials prepared for OAuth' });
+  // Update JWT token cookie
+  res.cookie('authToken', newJwtToken, {
+    httpOnly: true,
+    secure: false, // Set to true in production with HTTPS
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   });
+
+  console.log(`🔒 ClickUp credentials prepared and JWT token updated`);
+  res.json({ success: true, message: 'ClickUp credentials prepared for OAuth' });
 });
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated (using JWT)
 const isAuthenticated = (req, res, next) => {
-  if (!req.session.user) {
+  if (!req.isAuthenticated) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   next();
@@ -250,12 +263,12 @@ const isAuthenticated = (req, res, next) => {
 
 // ClickUp workspace management routes
 router.get('/clickup/workspaces', isAuthenticated, async (req, res) => {
-  if (!req.session.clickup?.access_token) {
+  if (!req.user.clickup?.access_token) {
     return res.status(401).json({ error: 'ClickUp not authenticated' });
   }
 
   try {
-    const { access_token, teams } = req.session.clickup;
+    const { access_token, teams } = req.user.clickup;
     const workspaces = [];
 
     // Get spaces and lists for each team
@@ -315,9 +328,23 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
 
   // Handle reset configuration
   if (reset) {
-    if (req.session.clickup) {
-      req.session.clickup.configured = false;
-      req.session.clickup.defaultList = null;
+    if (req.user.clickup) {
+      const updatedPayload = {
+        ...req.user,
+        clickup: {
+          ...req.user.clickup,
+          configured: false,
+          defaultList: null
+        }
+      };
+
+      const newJwtToken = generateToken(updatedPayload);
+      res.cookie('authToken', newJwtToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
     }
     console.log('🔄 ClickUp configuration reset');
     return res.json({ success: true, message: 'Configuration reset' });
@@ -327,34 +354,42 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
     return res.status(400).json({ error: 'List ID is required' });
   }
 
-  if (!req.session.clickup?.access_token) {
+  if (!req.user.clickup?.access_token) {
     return res.status(401).json({ error: 'ClickUp not authenticated' });
   }
 
   try {
-    // Update session with configuration
-    req.session.clickup.configured = true;
-    req.session.clickup.defaultList = {
-      id: listId,
-      name: listName,
-      spaceName,
-      teamName
+    // Update JWT token with configuration
+    const updatedPayload = {
+      ...req.user,
+      clickup: {
+        ...req.user.clickup,
+        configured: true,
+        defaultList: {
+          id: listId,
+          name: listName,
+          spaceName,
+          teamName
+        }
+      }
     };
 
-    // Explicitly save session to ensure persistence
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Error saving ClickUp configuration session:', err);
-        return res.status(500).json({ error: 'Failed to save session' });
-      }
+    const newJwtToken = generateToken(updatedPayload);
 
-      console.log(`✅ ClickUp configured - Default list: ${listName} (${listId})`);
-      console.log(`🔒 ClickUp configuration session saved with ID: ${req.sessionID}`);
-      res.json({
-        success: true,
-        message: 'ClickUp configuration saved',
-        defaultList: req.session.clickup.defaultList
-      });
+    // Update JWT token cookie
+    res.cookie('authToken', newJwtToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    console.log(`✅ ClickUp configured - Default list: ${listName} (${listId})`);
+    console.log(`🔒 ClickUp configuration saved in JWT token`);
+    res.json({
+      success: true,
+      message: 'ClickUp configuration saved',
+      defaultList: updatedPayload.clickup.defaultList
     });
 
   } catch (error) {

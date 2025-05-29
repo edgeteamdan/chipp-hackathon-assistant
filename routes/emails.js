@@ -1,6 +1,7 @@
 const express = require('express');
 const { google } = require('googleapis');
 const axios = require('axios');
+const { generateToken, requireAuth } = require('../utils/jwt');
 const router = express.Router();
 
 // Utility function to sanitize text for safe JSON transmission
@@ -37,31 +38,37 @@ const sanitizeEmailContent = (email) => {
   };
 };
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated (using JWT)
 const isAuthenticated = (req, res, next) => {
   console.log('🔐 Authentication check:', {
-    hasSession: !!req.session,
-    hasTokens: !!req.session?.tokens,
-    hasUser: !!req.session?.user,
-    hasClientCredentials: !!req.session?.clientCredentials,
-    sessionId: req.sessionID ? req.sessionID.substring(0, 8) + '...' : 'none'
+    isAuthenticated: req.isAuthenticated,
+    hasUser: !!req.user,
+    hasTokens: !!req.user?.tokens,
+    hasClientCredentials: !!req.user?.clientCredentials,
+    userEmail: req.user?.email || 'none'
   });
 
-  if (!req.session.tokens) {
-    console.log('❌ Authentication failed: No tokens in session');
+  if (!req.isAuthenticated) {
+    console.log('❌ Authentication failed: No valid JWT token');
     return res.status(401).json({
       error: 'Not authenticated',
-      details: 'Session tokens not found. Please login again.',
-      sessionId: req.sessionID
+      details: 'Valid JWT token required. Please login again.'
     });
   }
 
-  if (!req.session.clientCredentials) {
-    console.log('❌ Authentication failed: No client credentials in session');
+  if (!req.user.tokens) {
+    console.log('❌ Authentication failed: No tokens in JWT');
+    return res.status(401).json({
+      error: 'Google tokens not found',
+      details: 'Please login again to restore credentials.'
+    });
+  }
+
+  if (!req.user.clientCredentials) {
+    console.log('❌ Authentication failed: No client credentials in JWT');
     return res.status(401).json({
       error: 'Client credentials not found',
-      details: 'Please login again to restore session.',
-      sessionId: req.sessionID
+      details: 'Please login again to restore session.'
     });
   }
 
@@ -117,7 +124,7 @@ const extractEmailBody = (payload) => {
 // Get recent emails
 router.get('/recent', isAuthenticated, async (req, res) => {
   try {
-    const { googleClientId, googleClientSecret } = req.session.clientCredentials;
+    const { googleClientId, googleClientSecret } = req.user.clientCredentials;
 
     // Build redirect URI dynamically
     const protocol = req.get('x-forwarded-proto') || req.protocol;
@@ -130,7 +137,7 @@ router.get('/recent', isAuthenticated, async (req, res) => {
       redirectUri
     );
 
-    oauth2Client.setCredentials(req.session.tokens);
+    oauth2Client.setCredentials(req.user.tokens);
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     console.log('📧 Fetching recent emails...');
@@ -168,20 +175,25 @@ router.get('/recent', isAuthenticated, async (req, res) => {
       });
     }
 
-    // Store in session and return
-    req.session.emails = emails;
+    // Update JWT token with emails
+    const updatedPayload = {
+      ...req.user,
+      emails: emails
+    };
 
-    // Explicitly save session to ensure persistence
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Error saving emails session:', err);
-        return res.redirect('/?error=session_save_failed');
-      }
+    const newJwtToken = generateToken(updatedPayload);
 
-      console.log(`✅ Fetched ${emails.length} emails and saved to session`);
-      console.log(`🔒 Emails session saved with ID: ${req.sessionID}`);
-      res.redirect('/');
+    // Update JWT token cookie
+    res.cookie('authToken', newJwtToken, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
+
+    console.log(`✅ Fetched ${emails.length} emails and saved to JWT token`);
+    console.log(`🔒 JWT token updated with email data`);
+    res.redirect('/');
   } catch (error) {
     console.error('❌ Error fetching emails:', error);
     res.redirect('/?error=fetch_failed');
@@ -198,7 +210,7 @@ router.post('/process/:id', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'Chipp API key required' });
     }
 
-    const email = req.session.emails.find(e => e.id === id);
+    const email = req.user.emails?.find(e => e.id === id);
 
     if (!email) {
       return res.status(404).json({ error: 'Email not found' });
@@ -311,14 +323,14 @@ Please respond with a JSON object containing the task details and analysis as sp
       console.log('- taskData exists:', !!taskData);
       console.log('- has task_title:', !!taskData?.task_title);
       console.log('- has task.name:', !!taskData?.task?.name);
-      console.log('- ClickUp configured:', !!req.session.clickup?.configured);
-      console.log('- ClickUp access_token:', !!req.session.clickup?.access_token);
-      console.log('- ClickUp defaultList:', !!req.session.clickup?.defaultList);
+      console.log('- ClickUp configured:', !!req.user.clickup?.configured);
+      console.log('- ClickUp access_token:', !!req.user.clickup?.access_token);
+      console.log('- ClickUp defaultList:', !!req.user.clickup?.defaultList);
 
-      if (taskData && (taskData.task_title || taskData.task?.name) && req.session.clickup?.configured && req.session.clickup?.access_token && req.session.clickup?.defaultList) {
+      if (taskData && (taskData.task_title || taskData.task?.name) && req.user.clickup?.configured && req.user.clickup?.access_token && req.user.clickup?.defaultList) {
         console.log('🚀 Creating ClickUp task...');
 
-        const { access_token, defaultList } = req.session.clickup;
+        const { access_token, defaultList } = req.user.clickup;
 
         // Handle both JSON structures: direct properties or nested task object
         const task = taskData.task || taskData;
@@ -383,8 +395,8 @@ ClickUp integration is not configured. Please set up ClickUp to automatically cr
       finalResponse = chippResponse;
     }
 
-    // Update the email in session with the final response
-    req.session.emails = req.session.emails.map(e => {
+    // Update the email in JWT token with the final response
+    const updatedEmails = req.user.emails.map(e => {
       if (e.id === id) {
         return {
           ...e,
@@ -395,6 +407,22 @@ ClickUp integration is not configured. Please set up ClickUp to automatically cr
         };
       }
       return e;
+    });
+
+    // Update JWT token with processed email
+    const updatedPayload = {
+      ...req.user,
+      emails: updatedEmails
+    };
+
+    const newJwtToken = generateToken(updatedPayload);
+
+    // Update JWT token cookie
+    res.cookie('authToken', newJwtToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000
     });
 
     // Check if response is empty and try session-based recovery
