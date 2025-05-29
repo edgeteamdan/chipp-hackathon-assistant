@@ -62,7 +62,7 @@ SESSION_SECRET=your_random_session_secret
 
 ### 4. ClickUp OAuth Setup
 
-1. Go to [ClickUp API Console](https://app.clickup.com/api)
+1. Go to [ClickUp API Console](https://app.clickup.com/settings/team/clickup-api)
 2. Create a new app
 3. Set redirect URI to `http://localhost:3000/auth/clickup/callback`
 4. Copy your Client ID and Client Secret to the `.env` file

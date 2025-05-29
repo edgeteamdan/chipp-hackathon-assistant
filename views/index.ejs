@@ -399,7 +399,7 @@
 
       <% if (!clickup || !clickup.access_token) { %>
         <p>Connect your ClickUp account to enable automatic task creation from emails.</p>
-        <a href="/auth/clickup" class="btn btn-clickup">🔗 Connect ClickUp</a>
+        <button class="btn btn-clickup" onclick="connectClickUp()">🔗 Connect ClickUp</button>
       <% } else if (!clickup.configured) { %>
         <p>Choose your default workspace and list for task creation:</p>
         <div class="workspace-selector">
@@ -541,6 +541,59 @@
       }
     }
 
+    // ClickUp client-side authentication
+    async function connectClickUp() {
+      const settings = getStoredSettings();
+
+      if (!settings.clickupClientId || !settings.clickupClientSecret) {
+        alert('Please configure your ClickUp OAuth credentials in Settings first.');
+        window.location.href = '/settings';
+        return;
+      }
+
+      try {
+        // First, prepare the credentials for OAuth flow
+        const prepareResponse = await fetch('/client-auth/clickup/prepare', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            clickupClientId: settings.clickupClientId,
+            clickupClientSecret: settings.clickupClientSecret
+          })
+        });
+
+        const prepareData = await prepareResponse.json();
+
+        if (!prepareData.success) {
+          throw new Error(prepareData.error || 'Failed to prepare ClickUp authentication');
+        }
+
+        // Now get the auth URL
+        const urlResponse = await fetch('/client-auth/clickup/url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            clickupClientId: settings.clickupClientId
+          })
+        });
+
+        const urlData = await urlResponse.json();
+
+        if (urlData.authUrl) {
+          window.location.href = urlData.authUrl;
+        } else {
+          throw new Error(urlData.error || 'Failed to generate ClickUp auth URL');
+        }
+      } catch (error) {
+        console.error('Error starting ClickUp authentication:', error);
+        alert('Error starting ClickUp authentication: ' + error.message);
+      }
+    }
+
     // Load workspaces when page loads if ClickUp is connected but not configured
     <% if (user && clickup && clickup.access_token && !clickup.configured) { %>
       window.addEventListener('DOMContentLoaded', function() {
@@ -550,7 +603,7 @@
 
     async function loadWorkspaces() {
       try {
-        const response = await fetch('/clickup/workspaces');
+        const response = await fetch('/client-auth/clickup/workspaces');
         const data = await response.json();
 
         if (data.workspaces) {
@@ -604,7 +657,7 @@
       }
 
       try {
-        const response = await fetch('/clickup/configure', {
+        const response = await fetch('/client-auth/clickup/configure', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -634,7 +687,7 @@
     function reconfigureClickUp() {
       if (confirm('Are you sure you want to reconfigure your ClickUp integration?')) {
         // Reset configuration
-        fetch('/clickup/configure', {
+        fetch('/client-auth/clickup/configure', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
