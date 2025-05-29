@@ -5,6 +5,8 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const emailRoutes = require('./routes/emails');
 const clickupConfigRoutes = require('./routes/clickup-config');
+const configRoutes = require('./routes/config');
+const clientAuthRoutes = require('./routes/client-auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +30,8 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/auth', authRoutes);
 app.use('/emails', emailRoutes);
 app.use('/clickup', clickupConfigRoutes);
+app.use('/config', configRoutes);
+app.use('/client-auth', clientAuthRoutes);
 
 // Home route
 app.get('/', (req, res) => {
@@ -38,6 +42,16 @@ app.get('/', (req, res) => {
     clickup: req.session.clickup || null,
     clickupAuth: req.query.clickup_auth || null
   });
+});
+
+// Settings page route
+app.get('/settings', (req, res) => {
+  res.render('settings');
+});
+
+// Instructions page route
+app.get('/instructions', (req, res) => {
+  res.render('instructions');
 });
 
 // Error handling middleware

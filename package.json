@@ -1,11 +1,12 @@
 {
-  "name": "autotask-ai",
+  "name": "chipp-hackathon-assistant",
   "version": "1.0.0",
-  "description": "AutoTask AI - Powered by EdgeTeam × Chipp.ai - Convert Gmail emails to ClickUp tasks",
+  "description": "Chipp Hackathon Assistant - Powered by EdgeTeam × Chipp.ai - Convert Gmail emails to ClickUp tasks",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "echo 'No build step required for Node.js app'"
   },
   "dependencies": {
     "axios": "^1.6.2",

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - AutoTask AI</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
+      min-height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      background: rgba(254, 252, 232, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .logo img {
+      height: 40px;
+      width: auto;
+    }
+    .logo h1 {
+      margin: 0;
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .logo .subtitle {
+      color: #6B7280;
+      font-size: 0.875rem;
+      margin-left: 10px;
+    }
+    .settings-container {
+      background: rgba(254, 252, 232, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #F59E0B;
+    }
+    .form-group .help-text {
+      font-size: 12px;
+      color: #6B7280;
+      margin-top: 4px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+      margin-right: 12px;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+      box-shadow: 0 4px 16px rgba(107, 114, 128, 0.3);
+    }
+    .btn-secondary:hover {
+      box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
+    }
+    .success {
+      background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+      color: #065F46;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #6EE7B7;
+      font-weight: 500;
+      display: none;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #F59E0B;
+    }
+    .edgeteam-link {
+      color: #F59E0B;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    .edgeteam-link:hover {
+      color: #D97706;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
+      <div>
+        <h1>AutoTask AI Settings</h1>
+        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
+      </div>
+    </div>
+    <div>
+      <a href="/instructions" class="btn btn-secondary">📖 Instructions</a>
+      <a href="/" class="btn btn-secondary">← Back to App</a>
+    </div>
+  </div>
+
+  <div class="settings-container">
+    <div id="success-message" class="success">
+      ✅ Settings saved successfully! Your credentials are stored locally in your browser.
+    </div>
+
+    <form id="settings-form">
+      <div class="section-title">🤖 Chipp.ai Configuration</div>
+      <div class="form-group">
+        <label for="chipp-api-key">Chipp API Key</label>
+        <input type="password" id="chipp-api-key" name="chippApiKey" placeholder="live_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        <div class="help-text">Get your API key from <a href="https://app.chipp.ai" target="_blank">Chipp.ai Dashboard (Share tab under your Chipp app)</a></div>
+      </div>
+
+      <div class="section-title">📧 Google OAuth Configuration</div>
+      <div class="callback-url-info" id="google-callback-info" style="margin-bottom: 16px; padding: 12px; background: #FEF3C7; border-radius: 8px; border: 1px solid #F59E0B;">
+        <strong>📋 Redirect URI for Google OAuth:</strong><br>
+        <code id="google-callback-url" style="background: white; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Loading...</code><br>
+        <small style="color: #92400E;">Add this URL to your <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> OAuth 2.0 credentials</small>
+      </div>
+      <div class="form-group">
+        <label for="google-client-id">Google Client ID</label>
+        <input type="text" id="google-client-id" name="googleClientId" placeholder="xxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com">
+        <div class="help-text">From <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></div>
+      </div>
+      <div class="form-group">
+        <label for="google-client-secret">Google Client Secret</label>
+        <input type="password" id="google-client-secret" name="googleClientSecret" placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+        <div class="help-text">Keep this secret secure</div>
+      </div>
+
+      <div class="section-title">🎯 ClickUp OAuth Configuration</div>
+      <div class="callback-url-info" id="clickup-callback-info" style="margin-bottom: 16px; padding: 12px; background: #FEF3C7; border-radius: 8px; border: 1px solid #F59E0B;">
+        <strong>📋 Redirect URI for ClickUp OAuth:</strong><br>
+        <code id="clickup-callback-url" style="background: white; padding: 4px 8px; border-radius: 4px; font-family: monospace;">Loading...</code><br>
+        <small style="color: #92400E;">Add this URL to your <a href="https://app.clickup.com/settings/team/clickup-api" target="_blank">ClickUp App settings</a></small>
+      </div>
+      <div class="form-group">
+        <label for="clickup-client-id">ClickUp Client ID</label>
+        <input type="text" id="clickup-client-id" name="clickupClientId" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+        <div class="help-text">From <a href="https://app.clickup.com/settings/team/clickup-api" target="_blank">ClickUp API Console</a></div>
+      </div>
+      <div class="form-group">
+        <label for="clickup-client-secret">ClickUp Client Secret</label>
+        <input type="password" id="clickup-client-secret" name="clickupClientSecret" placeholder="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+        <div class="help-text">Keep this secret secure</div>
+      </div>
+
+      <div style="margin-top: 32px;">
+        <button type="submit" class="btn">💾 Save Settings</button>
+        <button type="button" class="btn btn-secondary" onclick="clearSettings()">🗑️ Clear All</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Load settings from localStorage on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      loadSettings();
+      loadCallbackUrls();
+    });
+
+    async function loadCallbackUrls() {
+      try {
+        const response = await fetch('/config/callback-urls');
+        const data = await response.json();
+
+        document.getElementById('google-callback-url').textContent = data.google.redirectUri;
+        document.getElementById('clickup-callback-url').textContent = data.clickup.redirectUri;
+      } catch (error) {
+        console.error('Error loading callback URLs:', error);
+        document.getElementById('google-callback-url').textContent = 'Error loading URL';
+        document.getElementById('clickup-callback-url').textContent = 'Error loading URL';
+      }
+    }
+
+    function loadSettings() {
+      const settings = getStoredSettings();
+
+      if (settings.chippApiKey) document.getElementById('chipp-api-key').value = settings.chippApiKey;
+      if (settings.googleClientId) document.getElementById('google-client-id').value = settings.googleClientId;
+      if (settings.googleClientSecret) document.getElementById('google-client-secret').value = settings.googleClientSecret;
+      if (settings.clickupClientId) document.getElementById('clickup-client-id').value = settings.clickupClientId;
+      if (settings.clickupClientSecret) document.getElementById('clickup-client-secret').value = settings.clickupClientSecret;
+    }
+
+    function getStoredSettings() {
+      return {
+        chippApiKey: localStorage.getItem('autotask_chipp_api_key'),
+        googleClientId: localStorage.getItem('autotask_google_client_id'),
+        googleClientSecret: localStorage.getItem('autotask_google_client_secret'),
+        clickupClientId: localStorage.getItem('autotask_clickup_client_id'),
+        clickupClientSecret: localStorage.getItem('autotask_clickup_client_secret')
+      };
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem('autotask_chipp_api_key', settings.chippApiKey || '');
+      localStorage.setItem('autotask_google_client_id', settings.googleClientId || '');
+      localStorage.setItem('autotask_google_client_secret', settings.googleClientSecret || '');
+      localStorage.setItem('autotask_clickup_client_id', settings.clickupClientId || '');
+      localStorage.setItem('autotask_clickup_client_secret', settings.clickupClientSecret || '');
+    }
+
+    function clearSettings() {
+      if (confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
+        localStorage.removeItem('autotask_chipp_api_key');
+        localStorage.removeItem('autotask_google_client_id');
+        localStorage.removeItem('autotask_google_client_secret');
+        localStorage.removeItem('autotask_clickup_client_id');
+        localStorage.removeItem('autotask_clickup_client_secret');
+
+        // Clear form
+        document.getElementById('settings-form').reset();
+
+        showSuccessMessage('Settings cleared successfully!');
+      }
+    }
+
+    function showSuccessMessage(message) {
+      const successDiv = document.getElementById('success-message');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    // Handle form submission
+    document.getElementById('settings-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(e.target);
+      const settings = {
+        chippApiKey: formData.get('chippApiKey'),
+        googleClientId: formData.get('googleClientId'),
+        googleClientSecret: formData.get('googleClientSecret'),
+        clickupClientId: formData.get('clickupClientId'),
+        clickupClientSecret: formData.get('clickupClientSecret')
+      };
+
+      saveSettings(settings);
+      showSuccessMessage('✅ Settings saved successfully! Your credentials are stored locally in your browser.');
+    });
+  </script>
+</body>
+</html>

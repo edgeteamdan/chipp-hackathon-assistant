@@ -7,8 +7,10 @@ A hackathon project that automatically converts Gmail emails into ClickUp tasks 
 - 🔐 **Gmail OAuth Authentication** - Secure login with Google
 - 📧 **Email Fetching** - Retrieve your latest 5 emails
 - 🤖 **AI Task Generation** - Convert emails to tasks using Chipp.ai
-- 🎯 **Smart Suggestions** - Get task titles, descriptions, and due dates
-- 📱 **Responsive Design** - Works on desktop and mobile
+- 🎯 **ClickUp Integration** - Automatically create tasks in ClickUp
+- 📋 **Smart Analysis** - Extract task titles, descriptions, priorities, and due dates
+- 🎨 **Modern UI** - Clean, responsive design with Chipp.ai branding
+- ✅ **Simple Success Messages** - Clear feedback with direct task links
 
 ## Tech Stack 🛠️
 
@@ -23,8 +25,8 @@ A hackathon project that automatically converts Gmail emails into ClickUp tasks 
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
-cd autotask-ai
+git clone https://github.com/edgeteamdan/chipp-hackathon-assistant.git
+cd chipp-hackathon-assistant
 npm install
 ```
 
@@ -43,6 +45,9 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 REDIRECT_URI=http://localhost:3000/auth/google/callback
 CHIPP_API_KEY=live_c8801992-98c9-4128-aabc-656788d194a2
+CLICKUP_CLIENT_ID=your_clickup_client_id
+CLICKUP_CLIENT_SECRET=your_clickup_client_secret
+CLICKUP_REDIRECT_URI=http://localhost:3000/auth/clickup/callback
 PORT=3000
 SESSION_SECRET=your_random_session_secret
 ```
@@ -55,7 +60,14 @@ SESSION_SECRET=your_random_session_secret
 4. Create OAuth 2.0 credentials
 5. Add `http://localhost:3000/auth/google/callback` to authorized redirect URIs
 
-### 4. Run the Application
+### 4. ClickUp OAuth Setup
+
+1. Go to [ClickUp API Console](https://app.clickup.com/api)
+2. Create a new app
+3. Set redirect URI to `http://localhost:3000/auth/clickup/callback`
+4. Copy your Client ID and Client Secret to the `.env` file
+
+### 5. Run the Application
 
 ```bash
 # Development mode with auto-restart
@@ -70,10 +82,11 @@ Visit `http://localhost:3000` in your browser.
 ## How It Works 🔄
 
 1. **Login**: User authenticates with Google OAuth
-2. **Fetch Emails**: Retrieve latest 5 emails from Gmail
-3. **AI Processing**: Send email content to Chipp.ai for analysis
-4. **Task Suggestions**: Display AI-generated task details
-5. **Review**: User can review and use the suggested tasks
+2. **ClickUp Setup**: Connect and configure ClickUp workspace
+3. **Fetch Emails**: Retrieve latest 5 emails from Gmail
+4. **AI Processing**: Send email content to Chipp.ai for analysis
+5. **Task Creation**: Automatically create tasks in ClickUp via API
+6. **Success Feedback**: Display simple success message with task link
 
 ## API Integration 🔌
 
@@ -103,18 +116,23 @@ Content-Type: application/json
 ## Project Structure 📁
 
 ```
-autotask-ai/
+chipp-hackathon-assistant/
 ├── index.js              # Main Express app
 ├── routes/
 │   ├── auth.js           # OAuth authentication routes
-│   └── emails.js         # Email processing routes
+│   ├── emails.js         # Email processing routes
+│   └── clickup-config.js # ClickUp integration routes
 ├── views/
 │   └── index.ejs         # Main UI template
 ├── public/
-│   └── css/
-│       └── style.css     # Custom styles
+│   ├── css/
+│   │   └── style.css     # Custom styles
+│   └── images/
+│       └── edgeteam-logo.png # EdgeTeam logo
+├── docs/                 # Documentation files
 ├── package.json          # Dependencies
 ├── .env.example          # Environment template
+├── chipp_system_prompt.md # Chipp.ai system prompt
 └── README.md            # This file
 ```
 

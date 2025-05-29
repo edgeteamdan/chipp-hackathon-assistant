@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Instructions - AutoTask AI</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
+      min-height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      background: rgba(254, 252, 232, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .logo img {
+      height: 40px;
+      width: auto;
+    }
+    .logo h1 {
+      margin: 0;
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .logo .subtitle {
+      color: #6B7280;
+      font-size: 0.875rem;
+      margin-left: 10px;
+    }
+    .instructions-container {
+      background: rgba(254, 252, 232, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+      margin-right: 12px;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+      box-shadow: 0 4px 16px rgba(107, 114, 128, 0.3);
+    }
+    .btn-secondary:hover {
+      box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
+    }
+    .step {
+      margin-bottom: 40px;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      border-left: 4px solid #F59E0B;
+    }
+    .step-number {
+      display: inline-block;
+      background: #F59E0B;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-weight: bold;
+      margin-right: 12px;
+    }
+    .step-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+    .step-content {
+      color: #4B5563;
+      line-height: 1.6;
+    }
+    .code-block {
+      background: #1F2937;
+      color: #F9FAFB;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      margin: 12px 0;
+      overflow-x: auto;
+    }
+    .highlight {
+      background: #FEF3C7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .warning {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      color: #991B1B;
+    }
+    .success {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      color: #166534;
+    }
+    .edgeteam-link {
+      color: #F59E0B;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    .edgeteam-link:hover {
+      color: #D97706;
+      text-decoration: underline;
+    }
+    .callback-url-display {
+      background: #1F2937;
+      color: #F9FAFB;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      margin: 8px 0;
+      word-break: break-all;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px solid #F59E0B;
+    }
+    ol {
+      padding-left: 20px;
+    }
+    ol li {
+      margin-bottom: 8px;
+    }
+    .screenshot-placeholder {
+      background: #F3F4F6;
+      border: 2px dashed #D1D5DB;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      color: #6B7280;
+      margin: 16px 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
+      <div>
+        <h1>Setup Instructions</h1>
+        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
+      </div>
+    </div>
+    <div>
+      <a href="/settings" class="btn">⚙️ Settings</a>
+      <a href="/" class="btn btn-secondary">← Back to App</a>
+    </div>
+  </div>
+
+  <div class="instructions-container">
+    <h2>🚀 Complete Setup Guide</h2>
+    <p>Follow these step-by-step instructions to configure AutoTask AI with your own API credentials. This ensures your data stays secure and private.</p>
+
+    <div class="success">
+      <strong>🔒 Privacy First:</strong> All your API keys and credentials are stored locally in your browser. Nothing is sent to our servers, ensuring maximum security and privacy.
+    </div>
+
+    <!-- Step 1: Chipp.ai -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">1</span>
+        Get Your Chipp.ai API Key
+      </div>
+      <div class="step-content">
+        <p>First, you'll need a Chipp.ai API key to power the AI email analysis.</p>
+        <ol>
+          <li>Go to <a href="https://app.chipp.ai" target="_blank">app.chipp.ai</a> and sign in</li>
+          <li>Navigate to your Chipp app dashboard</li>
+          <li>Click on the <strong>"Share"</strong> tab</li>
+          <li>Find the <strong>"API Key"</strong> section</li>
+          <li>Copy your API key (starts with <span class="highlight">live_</span>)</li>
+        </ol>
+        <div class="warning">
+          <strong>⚠️ Important:</strong> Keep your API key secure. Don't share it publicly or commit it to version control.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Google OAuth -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">2</span>
+        Create Google OAuth Credentials
+      </div>
+      <div class="step-content">
+        <p>Set up Google OAuth to access Gmail emails securely.</p>
+
+        <h4>2.1 Create a Google Cloud Project</h4>
+        <ol>
+          <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+          <li>Click <strong>"Select a project"</strong> → <strong>"New Project"</strong></li>
+          <li>Enter a project name (e.g., "AutoTask AI")</li>
+          <li>Click <strong>"Create"</strong></li>
+        </ol>
+
+        <h4>2.2 Enable Required APIs</h4>
+        <ol>
+          <li>In your project, go to <strong>"APIs & Services"</strong> → <strong>"Library"</strong></li>
+          <li>Search for and enable these APIs:
+            <ul>
+              <li><strong>Gmail API</strong></li>
+              <li><strong>Google+ API</strong> (for user profile)</li>
+            </ul>
+          </li>
+        </ol>
+
+        <h4>2.3 Create OAuth 2.0 Credentials</h4>
+        <ol>
+          <li>Go to <strong>"APIs & Services"</strong> → <strong>"Credentials"</strong></li>
+          <li>Click <strong>"+ Create Credentials"</strong> → <strong>"OAuth 2.0 Client IDs"</strong></li>
+          <li>If prompted, configure the OAuth consent screen:
+            <ul>
+              <li>Choose <strong>"External"</strong> user type</li>
+              <li>Fill in required fields (App name, User support email, Developer email)</li>
+              <li>Add scopes: <span class="highlight">../auth/gmail.readonly</span>, <span class="highlight">../auth/userinfo.email</span>, <span class="highlight">../auth/userinfo.profile</span></li>
+            </ul>
+          </li>
+          <li>For Application type, select <strong>"Web application"</strong></li>
+          <li>Add the redirect URI:</li>
+        </ol>
+
+        <div class="callback-url-display" id="google-callback-url">
+          Loading callback URL...
+        </div>
+
+        <ol start="6">
+          <li>Click <strong>"Create"</strong></li>
+          <li>Copy your <strong>Client ID</strong> and <strong>Client Secret</strong></li>
+        </ol>
+
+        <div class="warning">
+          <strong>🔗 Redirect URI:</strong> Make sure to use the exact URL shown above. This URL is automatically generated based on your current deployment.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: ClickUp OAuth -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">3</span>
+        Create ClickUp OAuth App
+      </div>
+      <div class="step-content">
+        <p>Set up ClickUp integration to automatically create tasks.</p>
+
+        <ol>
+          <li>Go to <a href="https://app.clickup.com/settings/team/clickup-api" target="_blank">ClickUp API Console</a></li>
+          <li>Click <strong>"+ Create an App"</strong></li>
+          <li>Fill in the app details:
+            <ul>
+              <li><strong>App Name:</strong> AutoTask AI (or your preferred name)</li>
+              <li><strong>Description:</strong> Email to task automation</li>
+            </ul>
+          </li>
+          <li>Set the redirect URL:</li>
+        </ol>
+
+        <div class="callback-url-display" id="clickup-callback-url">
+          Loading callback URL...
+        </div>
+
+        <ol start="5">
+          <li>Click <strong>"Create App"</strong></li>
+          <li>Copy your <strong>Client ID</strong> and <strong>Client Secret</strong></li>
+        </ol>
+
+        <div class="success">
+          <strong>✅ Pro Tip:</strong> ClickUp apps are private by default, so only you can use your OAuth app. Perfect for personal use!
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Customize Chipp.ai System Prompt -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">4</span>
+        Customize Your Chipp.ai System Prompt
+      </div>
+      <div class="step-content">
+        <p>Configure your Chipp.ai assistant to properly analyze emails and format ClickUp tasks.</p>
+
+        <ol>
+          <li>Go to your <a href="https://app.chipp.ai" target="_blank">Chipp.ai dashboard</a></li>
+          <li>Open your assistant/app</li>
+          <li>Navigate to the <strong>"System Prompt"</strong> section</li>
+          <li>Replace the existing system prompt with our optimized version:</li>
+        </ol>
+
+        <div style="position: relative;">
+          <button onclick="copySystemPrompt()" class="btn" style="position: absolute; top: 8px; right: 8px; padding: 8px 12px; font-size: 12px; z-index: 10;">📋 Copy</button>
+          <div class="code-block" id="system-prompt-text" style="max-height: 300px; overflow-y: auto; padding-top: 40px;">
+You are an intelligent task creation assistant that analyzes email content and formats it into ClickUp task specifications. When processing emails, you should:
+
+1. **Analyze the email content** to identify actionable items, requests, or tasks
+2. **Extract key information** including:
+   - Task title (concise, action-oriented)
+   - Detailed description
+   - Priority level (1=urgent, 2=high, 3=normal, 4=low)
+   - Due date (if mentioned or can be inferred, format as Unix timestamp in milliseconds)
+   - Task type/category
+   - Any relevant tags
+
+3. **Format the response as JSON** for the backend to process
+
+**Required Response Format:**
+You MUST respond with a JSON object in this exact format:
+
+```json
+{
+  "task": {
+    "name": "Task title here",
+    "description": "Detailed description including email context",
+    "priority": 1,
+    "due_date": 1734220800000,
+    "tags": ["tag1", "tag2"]
+  },
+  "analysis": {
+    "summary": "Brief summary of what was extracted from the email",
+    "actionable_items": ["item1", "item2"],
+    "urgency_reason": "Why this priority was chosen"
+  }
+}
+```
+
+**Priority Values:**
+- 1 = Urgent (red) - Immediate action required
+- 2 = High (yellow) - Important, needs attention soon
+- 3 = Normal (blue) - Standard priority
+- 4 = Low (gray) - Can be done when time permits
+
+**Critical Instructions:**
+- ALWAYS respond with valid JSON in the exact format specified above
+- Include the original email context in the task description
+- Choose appropriate priority based on urgency indicators in the email
+- Extract realistic due dates from email content when mentioned
+- If no specific deadline is mentioned, omit the due_date field
+- Include relevant tags that would help categorize the task
+          </div>
+        </div>
+
+        <ol start="5">
+          <li>Save your system prompt changes</li>
+          <li>Test with a sample email to ensure proper JSON formatting</li>
+        </ol>
+
+        <div class="success">
+          <strong>✅ Pro Tip:</strong> This system prompt ensures your Chipp.ai assistant outputs properly formatted JSON that AutoTask AI can process to create ClickUp tasks automatically!
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Configure Settings -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">5</span>
+        Configure Your Settings
+      </div>
+      <div class="step-content">
+        <p>Now enter all your credentials in the AutoTask AI settings page.</p>
+
+        <ol>
+          <li>Go to the <a href="/settings" target="_blank">Settings Page</a></li>
+          <li>Enter your <strong>Chipp.ai API Key</strong></li>
+          <li>Enter your <strong>Google Client ID</strong> and <strong>Client Secret</strong></li>
+          <li>Enter your <strong>ClickUp Client ID</strong> and <strong>Client Secret</strong></li>
+          <li>Click <strong>"Save Settings"</strong></li>
+        </ol>
+
+        <div class="success">
+          <strong>🔒 Security:</strong> All credentials are stored locally in your browser using localStorage. They never leave your device.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6: Test Authentication -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">6</span>
+        Test Your Setup
+      </div>
+      <div class="step-content">
+        <p>Verify everything is working correctly.</p>
+
+        <ol>
+          <li>Go back to the <a href="/" target="_blank">main app</a></li>
+          <li>Click <strong>"Login with Google"</strong></li>
+          <li>Complete the Google OAuth flow</li>
+          <li>You should see your Gmail emails listed</li>
+          <li>Click <strong>"Connect ClickUp"</strong> to set up task creation</li>
+          <li>Choose your default workspace and list</li>
+          <li>Try creating a task from an email!</li>
+        </ol>
+
+        <div class="success">
+          <strong>🎉 Success!</strong> You're now ready to convert emails into ClickUp tasks with AI-powered analysis!
+        </div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="step">
+      <div class="step-title">
+        <span class="step-number">❓</span>
+        Troubleshooting
+      </div>
+      <div class="step-content">
+        <h4>Common Issues:</h4>
+
+        <p><strong>Google OAuth Error:</strong></p>
+        <ul>
+          <li>Check that the redirect URI exactly matches the one shown above</li>
+          <li>Ensure Gmail API and Google+ API are enabled</li>
+          <li>Verify your OAuth consent screen is configured</li>
+        </ul>
+
+        <p><strong>ClickUp OAuth Error:</strong></p>
+        <ul>
+          <li>Verify the redirect URI in your ClickUp app settings</li>
+          <li>Make sure you're using the correct Client ID and Secret</li>
+        </ul>
+
+        <p><strong>Chipp.ai API Error:</strong></p>
+        <ul>
+          <li>Ensure your API key starts with "live_"</li>
+          <li>Check that your Chipp.ai account has API access</li>
+        </ul>
+
+        <p><strong>Settings Not Saving:</strong></p>
+        <ul>
+          <li>Make sure your browser allows localStorage</li>
+          <li>Try clearing your browser cache and re-entering credentials</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <div>
+        <a href="/settings" class="btn">⚙️ Go to Settings</a>
+        <a href="/" class="btn btn-secondary">🏠 Back to App</a>
+      </div>
+      <div>
+        <small>Need help? Contact <a href="https://edgeteam.io" target="_blank" class="edgeteam-link">EdgeTeam</a></small>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load callback URLs dynamically
+    window.addEventListener('DOMContentLoaded', function() {
+      loadCallbackUrls();
+    });
+
+    async function loadCallbackUrls() {
+      try {
+        const response = await fetch('/config/callback-urls');
+        const data = await response.json();
+
+        document.getElementById('google-callback-url').textContent = data.google.redirectUri;
+        document.getElementById('clickup-callback-url').textContent = data.clickup.redirectUri;
+      } catch (error) {
+        console.error('Error loading callback URLs:', error);
+        document.getElementById('google-callback-url').textContent = 'Error loading URL - please refresh the page';
+        document.getElementById('clickup-callback-url').textContent = 'Error loading URL - please refresh the page';
+      }
+    }
+
+    function copySystemPrompt() {
+      const systemPromptText = `You are an intelligent task creation assistant that analyzes email content and formats it into ClickUp task specifications. When processing emails, you should:
+
+1. **Analyze the email content** to identify actionable items, requests, or tasks
+2. **Extract key information** including:
+   - Task title (concise, action-oriented)
+   - Detailed description
+   - Priority level (1=urgent, 2=high, 3=normal, 4=low)
+   - Due date (if mentioned or can be inferred, format as Unix timestamp in milliseconds)
+   - Task type/category
+   - Any relevant tags
+
+3. **Format the response as JSON** for the backend to process
+
+**Required Response Format:**
+You MUST respond with a JSON object in this exact format:
+
+\`\`\`json
+{
+  "task": {
+    "name": "Task title here",
+    "description": "Detailed description including email context",
+    "priority": 1,
+    "due_date": 1734220800000,
+    "tags": ["tag1", "tag2"]
+  },
+  "analysis": {
+    "summary": "Brief summary of what was extracted from the email",
+    "actionable_items": ["item1", "item2"],
+    "urgency_reason": "Why this priority was chosen"
+  }
+}
+\`\`\`
+
+**Priority Values:**
+- 1 = Urgent (red) - Immediate action required
+- 2 = High (yellow) - Important, needs attention soon
+- 3 = Normal (blue) - Standard priority
+- 4 = Low (gray) - Can be done when time permits
+
+**Critical Instructions:**
+- ALWAYS respond with valid JSON in the exact format specified above
+- Include the original email context in the task description
+- Choose appropriate priority based on urgency indicators in the email
+- Extract realistic due dates from email content when mentioned
+- If no specific deadline is mentioned, omit the due_date field
+- Include relevant tags that would help categorize the task`;
+
+      navigator.clipboard.writeText(systemPromptText).then(function() {
+        // Change button text temporarily
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '✅ Copied!';
+        button.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)';
+        }, 2000);
+      }).catch(function(err) {
+        alert('Failed to copy to clipboard. Please select and copy the text manually.');
+        console.error('Could not copy text: ', err);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AutoTask AI - Powered by EdgeTeam × Chipp.ai</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     body {
@@ -122,6 +125,7 @@
       display: inline-block;
       transition: all 0.3s ease;
       box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+      white-space: nowrap;
     }
     .btn:hover {
       transform: translateY(-2px);
@@ -133,6 +137,13 @@
     }
     .btn-google:hover {
       box-shadow: 0 8px 24px rgba(66, 133, 244, 0.4);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #6B7280 0%, #4B5563 100%);
+      box-shadow: 0 4px 16px rgba(107, 114, 128, 0.3);
+    }
+    .btn-secondary:hover {
+      box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
     }
     .intro {
       text-align: center;
@@ -247,6 +258,16 @@
       color: #D97706;
       text-decoration: underline;
     }
+    .chipp-link {
+      color: #F59E0B;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    .chipp-link:hover {
+      color: #D97706;
+      text-decoration: underline;
+    }
     .task-success {
       margin-bottom: 15px;
     }
@@ -306,17 +327,23 @@
       <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
       <div>
         <h1>AutoTask AI</h1>
-        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link">EdgeTeam</a> × Chipp.ai</span>
+        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="chipp-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
       </div>
     </div>
     <% if (user) { %>
       <div class="user-info">
         <img src="<%= user.picture %>" alt="Profile">
         <span><%= user.name %></span>
+        <a href="/instructions" class="btn btn-secondary">📖 Instructions</a>
+        <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
         <a href="/auth/logout" class="btn">Logout</a>
       </div>
     <% } else { %>
-      <a href="/auth/google" class="btn btn-google">🔐 Login with Google</a>
+      <div class="user-info">
+        <a href="/instructions" class="btn btn-secondary">📖 Instructions</a>
+        <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
+        <button class="btn btn-google" onclick="loginWithGoogle()">🔐 Login with Google</button>
+      </div>
     <% } %>
   </div>
 
@@ -443,7 +470,7 @@
   <% } else { %>
     <div class="intro">
       <h2>🎯 Welcome to AutoTask AI</h2>
-      <p><strong>Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link">EdgeTeam</a> × Chipp.ai</strong></p>
+      <p><strong>Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="chipp-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></strong></p>
       <p>Transform your Gmail inbox into actionable ClickUp tasks automatically using advanced AI!</p>
       <p>This intelligent assistant analyzes your emails and suggests comprehensive task details:</p>
       <ul style="text-align: left; display: inline-block; margin: 20px 0;">
@@ -453,13 +480,66 @@
         <li>🏷️ Priority levels</li>
         <li>🎯 Action items extraction</li>
       </ul>
-      <p><strong>Login with your Google account to experience the future of email productivity.</strong></p>
+
+      <div style="margin-top: 24px; padding: 20px; background: #FEF3C7; border-radius: 12px; border: 2px solid #F59E0B;">
+        <h3 style="margin: 0 0 12px 0; color: #92400E;">🔧 First Time Setup Required</h3>
+        <p style="margin: 0 0 16px 0; color: #92400E;">Before you can use AutoTask AI, you'll need to configure your API credentials for security and privacy.</p>
+        <a href="/instructions" class="btn" style="margin-right: 12px;">📖 View Setup Instructions</a>
+        <a href="/settings" class="btn btn-secondary">⚙️ Go to Settings</a>
+      </div>
+
+      <p style="margin-top: 20px;"><strong>After setup, login with your Google account to experience the future of email productivity.</strong></p>
     </div>
   <% } %>
 
   <script>
     let workspaces = [];
     let selectedWorkspace = null;
+
+    // Client-side authentication functions
+    function getStoredSettings() {
+      return {
+        chippApiKey: localStorage.getItem('autotask_chipp_api_key'),
+        googleClientId: localStorage.getItem('autotask_google_client_id'),
+        googleClientSecret: localStorage.getItem('autotask_google_client_secret'),
+        clickupClientId: localStorage.getItem('autotask_clickup_client_id'),
+        clickupClientSecret: localStorage.getItem('autotask_clickup_client_secret')
+      };
+    }
+
+    async function loginWithGoogle() {
+      const settings = getStoredSettings();
+
+      if (!settings.googleClientId || !settings.googleClientSecret) {
+        alert('Please configure your Google OAuth credentials in Settings first.');
+        window.location.href = '/settings';
+        return;
+      }
+
+      try {
+        const response = await fetch('/client-auth/google/url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            googleClientId: settings.googleClientId,
+            googleClientSecret: settings.googleClientSecret
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.authUrl) {
+          window.location.href = data.authUrl;
+        } else {
+          alert('Failed to generate authentication URL: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error starting Google authentication:', error);
+        alert('Error starting authentication. Please try again.');
+      }
+    }
 
     // Load workspaces when page loads if ClickUp is connected but not configured
     <% if (user && clickup && clickup.access_token && !clickup.configured) { %>
