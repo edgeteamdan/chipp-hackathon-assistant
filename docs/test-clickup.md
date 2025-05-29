@@ -38,7 +38,7 @@ npm run dev
 ### 4. Configure ClickUp Workspace
 - After successful ClickUp authentication, you'll see workspace selection
 - Choose your desired Team > Space > List from the dropdown
-- Click "✅ Configure Default List"
+- Click "✅ Select Default List"
 - You should see confirmation message
 
 ### 5. Test Email Processing
