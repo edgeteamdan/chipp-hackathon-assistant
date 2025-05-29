@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoTask AI - Gmail to ClickUp Tasks</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo h1 {
+      margin: 0;
+      color: #1a73e8;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .user-info img {
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+    }
+    .email-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .email-card:hover {
+      transform: translateY(-2px);
+    }
+    .email-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .email-subject {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #333;
+    }
+    .email-from, .email-date {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .email-snippet {
+      margin-bottom: 15px;
+      color: #555;
+      line-height: 1.5;
+    }
+    .chipp-response {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      white-space: pre-line;
+    }
+    .chipp-response h3 {
+      margin-top: 0;
+      color: #fff;
+    }
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    .btn-google {
+      background: #4285f4;
+    }
+    .btn-google:hover {
+      background: #3367d6;
+    }
+    .intro {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .actions {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <h1>🤖 AutoTask AI</h1>
+      <span style="color: #666;">Gmail → ClickUp Tasks</span>
+    </div>
+    <% if (user) { %>
+      <div class="user-info">
+        <img src="<%= user.picture %>" alt="Profile">
+        <span><%= user.name %></span>
+        <a href="/auth/logout" class="btn">Logout</a>
+      </div>
+    <% } else { %>
+      <a href="/auth/google" class="btn btn-google">🔐 Login with Google</a>
+    <% } %>
+  </div>
+  
+  <% if (error) { %>
+    <div class="error">
+      <% if (error === 'auth_failed') { %>
+        Authentication failed. Please try again.
+      <% } else if (error === 'fetch_failed') { %>
+        Failed to fetch emails. Please try again.
+      <% } else if (error === 'chipp_failed') { %>
+        Failed to process with Chipp.ai. Please try again.
+      <% } else { %>
+        An error occurred. Please try again.
+      <% } %>
+    </div>
+  <% } %>
+  
+  <% if (user) { %>
+    <div class="actions">
+      <a href="/emails/recent" class="btn">📧 Fetch Latest 5 Emails</a>
+    </div>
+    
+    <% if (emails && emails.length > 0) { %>
+      <h2>📬 Your Recent Emails</h2>
+      <% emails.forEach(email => { %>
+        <div class="email-card">
+          <div class="email-header">
+            <div class="email-subject"><%= email.subject %></div>
+            <div class="email-date"><%= email.date %></div>
+          </div>
+          <div class="email-from">From: <%= email.from %></div>
+          <div class="email-snippet"><%= email.snippet %></div>
+          
+          <% if (email.chippResponse) { %>
+            <div class="chipp-response">
+              <h3>🎯 AutoTask AI Suggestion:</h3>
+              <%= email.chippResponse %>
+            </div>
+          <% } else { %>
+            <form action="/emails/process/<%= email.id %>" method="POST">
+              <button type="submit" class="btn">🚀 Create Task from Email</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+    <% } else if (user) { %>
+      <div class="empty-state">
+        <h3>📭 No emails loaded yet</h3>
+        <p>Click "Fetch Latest 5 Emails" to get started with AutoTask AI!</p>
+      </div>
+    <% } %>
+  <% } else { %>
+    <div class="intro">
+      <h2>🎯 Welcome to AutoTask AI</h2>
+      <p>Transform your Gmail inbox into actionable ClickUp tasks automatically!</p>
+      <p>This app uses AI to analyze your emails and suggest task details including:</p>
+      <ul style="text-align: left; display: inline-block;">
+        <li>📝 Task titles</li>
+        <li>📋 Detailed descriptions</li>
+        <li>📅 Suggested due dates</li>
+        <li>🏷️ Priority levels</li>
+      </ul>
+      <p><strong>Login with your Google account to get started.</strong></p>
+    </div>
+  <% } %>
+</body>
+</html>
