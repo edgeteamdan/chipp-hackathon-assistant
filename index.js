@@ -29,7 +29,7 @@ app.use('/emails', emailRoutes);
 
 // Home route
 app.get('/', (req, res) => {
-  res.render('index', { 
+  res.render('index', {
     user: req.session.user || null,
     emails: req.session.emails || [],
     error: req.query.error || null
@@ -50,5 +50,5 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 AutoTask AI server running on http://localhost:${PORT}`);
-  console.log('📧 Ready to process Gmail emails with Chipp.ai!');
+  console.log('📧 Powered by EdgeTeam × Chipp.ai - Ready to transform emails into tasks!');
 });

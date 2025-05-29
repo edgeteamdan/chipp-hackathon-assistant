@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoTask AI - Gmail to ClickUp Tasks</title>
+  <title>AutoTask AI - Powered by EdgeTeam × Chipp.ai</title>
   <link rel="stylesheet" href="/css/style.css">
   <style>
     body {
@@ -11,26 +11,43 @@
       max-width: 900px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f8f9fa;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
     }
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
-      background: white;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
+    }
+    .logo img {
+      height: 40px;
+      width: auto;
     }
     .logo h1 {
       margin: 0;
-      color: #1a73e8;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .logo .subtitle {
+      color: #6B7280;
+      font-size: 0.875rem;
+      margin-left: 10px;
     }
     .user-info {
       display: flex;
@@ -43,15 +60,18 @@
       height: 40px;
     }
     .email-card {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
     }
     .email-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
     .email-header {
       display: flex;
@@ -73,70 +93,88 @@
       line-height: 1.5;
     }
     .chipp-response {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
       color: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-top: 15px;
+      padding: 24px;
+      border-radius: 16px;
+      margin-top: 20px;
       white-space: pre-line;
+      box-shadow: 0 8px 32px rgba(79, 70, 229, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .chipp-response h3 {
       margin-top: 0;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
       color: white;
       border: none;
       padding: 12px 24px;
-      border-radius: 6px;
+      border-radius: 12px;
       cursor: pointer;
       font-size: 14px;
+      font-weight: 600;
       text-decoration: none;
       display: inline-block;
-      transition: transform 0.2s;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
     }
     .btn:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
     }
     .btn-google {
-      background: #4285f4;
+      background: linear-gradient(135deg, #4285f4 0%, #1976d2 100%);
+      box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
     }
     .btn-google:hover {
-      background: #3367d6;
+      box-shadow: 0 8px 24px rgba(66, 133, 244, 0.4);
     }
     .intro {
       text-align: center;
-      background: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 48px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .actions {
       margin-bottom: 30px;
       text-align: center;
     }
     .error {
-      background: #fee;
-      color: #c33;
-      padding: 15px;
-      border-radius: 5px;
+      background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+      color: #DC2626;
+      padding: 16px 20px;
+      border-radius: 12px;
       margin-bottom: 20px;
+      border: 1px solid #FCA5A5;
+      font-weight: 500;
     }
     .empty-state {
       text-align: center;
-      padding: 40px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 48px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">
-      <h1>🤖 AutoTask AI</h1>
-      <span style="color: #666;">Gmail → ClickUp Tasks</span>
+      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
+      <div>
+        <h1>AutoTask AI</h1>
+        <span class="subtitle">Powered by EdgeTeam × Chipp.ai</span>
+      </div>
     </div>
     <% if (user) { %>
       <div class="user-info">
@@ -148,7 +186,7 @@
       <a href="/auth/google" class="btn btn-google">🔐 Login with Google</a>
     <% } %>
   </div>
-  
+
   <% if (error) { %>
     <div class="error">
       <% if (error === 'auth_failed') { %>
@@ -162,12 +200,12 @@
       <% } %>
     </div>
   <% } %>
-  
+
   <% if (user) { %>
     <div class="actions">
       <a href="/emails/recent" class="btn">📧 Fetch Latest 5 Emails</a>
     </div>
-    
+
     <% if (emails && emails.length > 0) { %>
       <h2>📬 Your Recent Emails</h2>
       <% emails.forEach(email => { %>
@@ -178,7 +216,7 @@
           </div>
           <div class="email-from">From: <%= email.from %></div>
           <div class="email-snippet"><%= email.snippet %></div>
-          
+
           <% if (email.chippResponse) { %>
             <div class="chipp-response">
               <h3>🎯 AutoTask AI Suggestion:</h3>
@@ -200,15 +238,17 @@
   <% } else { %>
     <div class="intro">
       <h2>🎯 Welcome to AutoTask AI</h2>
-      <p>Transform your Gmail inbox into actionable ClickUp tasks automatically!</p>
-      <p>This app uses AI to analyze your emails and suggest task details including:</p>
-      <ul style="text-align: left; display: inline-block;">
-        <li>📝 Task titles</li>
+      <p><strong>Powered by EdgeTeam × Chipp.ai</strong></p>
+      <p>Transform your Gmail inbox into actionable ClickUp tasks automatically using advanced AI!</p>
+      <p>This intelligent assistant analyzes your emails and suggests comprehensive task details:</p>
+      <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+        <li>📝 Smart task titles</li>
         <li>📋 Detailed descriptions</li>
         <li>📅 Suggested due dates</li>
         <li>🏷️ Priority levels</li>
+        <li>🎯 Action items extraction</li>
       </ul>
-      <p><strong>Login with your Google account to get started.</strong></p>
+      <p><strong>Login with your Google account to experience the future of email productivity.</strong></p>
     </div>
   <% } %>
 </body>

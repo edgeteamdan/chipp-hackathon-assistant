@@ -1,7 +1,9 @@
-# AutoTask AI Hackathon Project
+# AutoTask AI - Powered by EdgeTeam × Chipp.ai
 
 ## Current Task
 ✅ **COMPLETED** - All core functionality implemented!
+✅ **UPDATED** - Branding updated with EdgeTeam logo and Chipp.ai color scheme!
+✅ **NEW** - ClickUp integration documentation created!
 
 ## Progress
 - [x] Project structure setup
@@ -14,6 +16,7 @@
 - [x] Responsive design
 - [x] Documentation (README.md)
 - [x] Git configuration (.gitignore)
+- [x] ClickUp integration documentation
 
 ## Files Created
 - `package.json` - Project dependencies and scripts
@@ -25,6 +28,7 @@
 - `public/css/style.css` - Custom styling
 - `README.md` - Complete documentation
 - `.gitignore` - Git ignore rules
+- `chipp_system_prompt.md` - ClickUp integration documentation
 
 ## How to Run
 1. Create a `.env` file based on `.env.example`
@@ -44,6 +48,9 @@
 - 📝 Complete documentation
 
 ## Next Steps
-1. Set up Google OAuth credentials
-2. Test the application
-3. Deploy if needed for hackathon demo
+1. Implement ClickUp OAuth integration
+2. Create the task creation API endpoint (/api/clickup/create-task)
+3. Set up the Chipp webhook handler (/api/chipp/task-created)
+4. Update UI to display ClickUp task links
+5. Test the complete integration flow
+6. Configure Chipp with the system prompt and API endpoints

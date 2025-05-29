@@ -1,7 +1,7 @@
 {
   "name": "autotask-ai",
   "version": "1.0.0",
-  "description": "AutoTask AI - Convert Gmail emails to ClickUp tasks",
+  "description": "AutoTask AI - Powered by EdgeTeam × Chipp.ai - Convert Gmail emails to ClickUp tasks",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

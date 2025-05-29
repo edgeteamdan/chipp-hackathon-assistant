@@ -1,4 +1,4 @@
-# AutoTask AI 🤖
+# EdgeTeam Chipp Hackathon Assistant 🤖
 
 A hackathon project that automatically converts Gmail emails into ClickUp tasks using Chipp.ai's intelligent task generation.
 
