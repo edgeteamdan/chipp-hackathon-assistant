@@ -40,14 +40,6 @@ const sanitizeEmailContent = (email) => {
 
 // Middleware to check if user is authenticated (using JWT)
 const isAuthenticated = (req, res, next) => {
-  console.log('🔐 Authentication check:', {
-    isAuthenticated: req.isAuthenticated,
-    hasUser: !!req.user,
-    hasTokens: !!req.user?.tokens,
-    hasClientCredentials: !!req.user?.clientCredentials,
-    userEmail: req.user?.email || 'none'
-  });
-
   if (!req.isAuthenticated) {
     console.log('❌ Authentication failed: No valid JWT token');
     return res.status(401).json({
@@ -181,19 +173,48 @@ router.get('/recent', isAuthenticated, async (req, res) => {
       emails: emails
     };
 
-    const newJwtToken = generateToken(updatedPayload);
+    try {
+      const newJwtToken = generateToken(updatedPayload);
 
-    // Update JWT token cookie
-    res.cookie('authToken', newJwtToken, {
-      httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
+      // Update JWT token cookie
+      res.cookie('authToken', newJwtToken, {
+        httpOnly: true,
+        secure: false, // Set to true in production with HTTPS
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      });
 
-    console.log(`✅ Fetched ${emails.length} emails and saved to JWT token`);
-    console.log(`🔒 JWT token updated with email data`);
-    res.redirect('/');
+      console.log(`✅ Fetched ${emails.length} emails and saved to JWT token`);
+
+      // Also store in memory to bypass JWT cookie timing issues
+      const userId = req.user.id || req.user.email;
+      if (global.userDataStore) {
+        const existingData = global.userDataStore.get(userId) || {};
+        global.userDataStore.set(userId, {
+          ...existingData,
+          emails: emails
+        });
+        console.log(`💾 Stored ${emails.length} emails in memory for user: ${userId}`);
+      }
+
+      // Return JSON response with updated JWT token
+      res.json({
+        success: true,
+        message: `Successfully fetched ${emails.length} emails`,
+        emails: emails,
+        emailCount: emails.length,
+        // Include the new JWT token in the response for immediate use
+        newToken: newJwtToken
+      });
+    } catch (jwtError) {
+      console.error('❌ Error generating JWT token with emails:', jwtError);
+      console.log('🔍 Payload that failed:', Object.keys(updatedPayload));
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update JWT token with emails',
+        details: jwtError.message
+      });
+    }
   } catch (error) {
     console.error('❌ Error fetching emails:', error);
     res.redirect('/?error=fetch_failed');

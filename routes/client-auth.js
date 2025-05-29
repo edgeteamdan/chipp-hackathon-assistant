@@ -124,7 +124,7 @@ router.post('/clickup/url', (req, res) => {
     // Build redirect URI dynamically based on current request
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     const host = req.get('host');
-    const redirectUri = `${protocol}://${host}/client-auth/clickup/callback`;
+    const redirectUri = `${protocol}://${host}/client-auth/clickup/callback?popup=true`;
 
     console.log(`🔗 ClickUp OAuth redirect URI: ${redirectUri}`);
 
@@ -210,7 +210,70 @@ router.get('/clickup/callback', async (req, res) => {
 
     console.log('✅ ClickUp authentication successful with client credentials');
     console.log(`🔒 JWT token updated with ClickUp data`);
-    res.redirect('/?clickup_auth=success');
+
+    // Also store in memory to bypass JWT cookie timing issues
+    const userId = req.user.id || req.user.email;
+    if (global.userDataStore) {
+      const existingData = global.userDataStore.get(userId) || {};
+      const clickupData = {
+        access_token,
+        teams,
+        configured: false
+      };
+      global.userDataStore.set(userId, {
+        ...existingData,
+        clickup: clickupData
+      });
+      console.log(`💾 Stored ClickUp data in memory for user: ${userId} - Teams: ${teams?.length || 0}, Access Token: ${!!access_token}`);
+    }
+
+    // Check if this is a popup request (has a specific header or query param)
+    const isPopup = req.query.popup === 'true' || req.headers['x-popup-request'] === 'true';
+
+    if (isPopup) {
+      // Return a simple HTML page that communicates with the parent window
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>ClickUp Authentication</title>
+        </head>
+        <body>
+          <script>
+            // Send success message to parent window
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'clickup-auth-success',
+                clickup: {
+                  access_token: true,
+                  teams: ${JSON.stringify(teams)},
+                  configured: false
+                }
+              }, window.location.origin);
+              window.close();
+            } else {
+              // Fallback: redirect to main page with success message
+              window.location.href = '/?clickup_auth=success';
+            }
+          </script>
+          <p>ClickUp authentication successful! This window should close automatically.</p>
+        </body>
+        </html>
+      `);
+    } else {
+      // Return JSON response for direct API calls
+      res.json({
+        success: true,
+        message: 'ClickUp authentication successful',
+        clickup: {
+          access_token: !!access_token,
+          teams: teams,
+          configured: false
+        },
+        // Include the new JWT token in the response for immediate use
+        newToken: newJwtToken
+      });
+    }
 
   } catch (error) {
     console.error('❌ Error during ClickUp client authentication:', error);
@@ -263,12 +326,23 @@ const isAuthenticated = (req, res, next) => {
 
 // ClickUp workspace management routes
 router.get('/clickup/workspaces', isAuthenticated, async (req, res) => {
-  if (!req.user.clickup?.access_token) {
+  console.log('🌐 Workspaces endpoint called');
+
+  // Check in-memory store first, then fall back to JWT token
+  const userId = req.user.id || req.user.email;
+  const storedData = global.userDataStore?.get(userId);
+  const clickupData = storedData?.clickup || req.user.clickup;
+
+  console.log(`🔍 ClickUp data source: ${storedData?.clickup ? 'from store' : 'from JWT'}`);
+  console.log(`🔍 ClickUp access_token exists: ${!!clickupData?.access_token}`);
+
+  if (!clickupData?.access_token) {
+    console.log('❌ ClickUp not authenticated - no access token found');
     return res.status(401).json({ error: 'ClickUp not authenticated' });
   }
 
   try {
-    const { access_token, teams } = req.user.clickup;
+    const { access_token, teams } = clickupData;
     const workspaces = [];
 
     // Get spaces and lists for each team
@@ -326,13 +400,23 @@ router.get('/clickup/workspaces', isAuthenticated, async (req, res) => {
 router.post('/clickup/configure', isAuthenticated, async (req, res) => {
   const { listId, listName, spaceName, teamName, reset } = req.body;
 
+  console.log('⚙️ Configure endpoint called');
+
+  // Check in-memory store first, then fall back to JWT token
+  const userId = req.user.id || req.user.email;
+  const storedData = global.userDataStore?.get(userId);
+  const clickupData = storedData?.clickup || req.user.clickup;
+
+  console.log(`🔍 ClickUp data source: ${storedData?.clickup ? 'from store' : 'from JWT'}`);
+  console.log(`🔍 ClickUp access_token exists: ${!!clickupData?.access_token}`);
+
   // Handle reset configuration
   if (reset) {
-    if (req.user.clickup) {
+    if (clickupData) {
       const updatedPayload = {
         ...req.user,
         clickup: {
-          ...req.user.clickup,
+          ...clickupData,
           configured: false,
           defaultList: null
         }
@@ -354,7 +438,8 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
     return res.status(400).json({ error: 'List ID is required' });
   }
 
-  if (!req.user.clickup?.access_token) {
+  if (!clickupData?.access_token) {
+    console.log('❌ ClickUp not authenticated - no access token found');
     return res.status(401).json({ error: 'ClickUp not authenticated' });
   }
 
@@ -363,7 +448,7 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
     const updatedPayload = {
       ...req.user,
       clickup: {
-        ...req.user.clickup,
+        ...clickupData,
         configured: true,
         defaultList: {
           id: listId,
@@ -386,10 +471,24 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
 
     console.log(`✅ ClickUp configured - Default list: ${listName} (${listId})`);
     console.log(`🔒 ClickUp configuration saved in JWT token`);
+
+    // Also store in memory to bypass JWT cookie timing issues
+    const userId = req.user.id || req.user.email;
+    if (global.userDataStore) {
+      const existingData = global.userDataStore.get(userId) || {};
+      global.userDataStore.set(userId, {
+        ...existingData,
+        clickup: updatedPayload.clickup
+      });
+      console.log(`💾 Stored ClickUp configuration in memory for user: ${userId}`);
+    }
+
     res.json({
       success: true,
       message: 'ClickUp configuration saved',
-      defaultList: updatedPayload.clickup.defaultList
+      defaultList: updatedPayload.clickup.defaultList,
+      // Include the new JWT token in the response for immediate use
+      newToken: newJwtToken
     });
 
   } catch (error) {

@@ -376,7 +376,8 @@
 
   <% if (user) { %>
     <div class="actions">
-      <a href="/emails/recent" class="btn">📧 Fetch Latest Emails</a>
+      <button class="btn" onclick="fetchEmails()" id="fetchEmailsBtn">📧 Fetch Latest Emails</button>
+      <div id="fetch-status" class="processing-status" style="display: none; margin-top: 15px;"></div>
     </div>
 
     <!-- ClickUp Integration Section -->
@@ -584,7 +585,44 @@
         const urlData = await urlResponse.json();
 
         if (urlData.authUrl) {
-          window.location.href = urlData.authUrl;
+          // Open ClickUp OAuth in a popup window
+          const popup = window.open(
+            urlData.authUrl,
+            'clickup-auth',
+            'width=600,height=700,scrollbars=yes,resizable=yes'
+          );
+
+          // Listen for the popup to close or send a message
+          const checkClosed = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkClosed);
+              // Check if ClickUp authentication was successful by making a test request
+              setTimeout(() => {
+                checkClickUpAuthStatus();
+              }, 1000);
+            }
+          }, 1000);
+
+          // Listen for messages from the popup (if the callback sends postMessage)
+          window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+
+            if (event.data.type === 'clickup-auth-success') {
+              clearInterval(checkClosed);
+              popup.close();
+
+              // Update JWT token if provided
+              if (event.data.newToken) {
+                updateJWTCookie(event.data.newToken);
+              }
+
+              handleClickUpAuthSuccess(event.data.clickup);
+            } else if (event.data.type === 'clickup-auth-error') {
+              clearInterval(checkClosed);
+              popup.close();
+              throw new Error(event.data.error || 'ClickUp authentication failed');
+            }
+          });
         } else {
           throw new Error(urlData.error || 'Failed to generate ClickUp auth URL');
         }
@@ -594,26 +632,180 @@
       }
     }
 
-    // Load workspaces when page loads if ClickUp is connected but not configured
-    <% if (user && clickup && clickup.access_token && !clickup.configured) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        loadWorkspaces();
-      });
-    <% } %>
-
-    async function loadWorkspaces() {
+    // Helper functions for ClickUp authentication
+    async function checkClickUpAuthStatus() {
       try {
         const response = await fetch('/client-auth/clickup/workspaces');
         const data = await response.json();
 
         if (data.workspaces) {
-          workspaces = data.workspaces;
-          populateWorkspaceSelect();
+          // ClickUp authentication was successful
+          handleClickUpAuthSuccess({ teams: data.workspaces });
         } else {
-          console.error('Failed to load workspaces:', data.error);
+          console.log('ClickUp authentication may have failed or been cancelled');
         }
       } catch (error) {
-        console.error('Error loading workspaces:', error);
+        console.log('ClickUp authentication check failed:', error);
+      }
+    }
+
+    function handleClickUpAuthSuccess(clickupData) {
+      console.log('✅ ClickUp authentication successful!', clickupData);
+
+      // Show success message
+      showClickUpSuccessMessage();
+
+      // Update the ClickUp section UI
+      updateClickUpUI(clickupData);
+
+      // Load workspaces for configuration
+      console.log('🔄 Scheduling loadWorkspaces() call in 1 second...');
+      setTimeout(() => {
+        console.log('⏰ Now calling loadWorkspaces()...');
+        loadWorkspaces();
+      }, 1000);
+    }
+
+    function showClickUpSuccessMessage() {
+      // Remove any existing success message
+      const existingMessage = document.getElementById('clickup-success-message');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+
+      // Create and show new success message
+      const successMessage = document.createElement('div');
+      successMessage.id = 'clickup-success-message';
+      successMessage.className = 'success';
+      successMessage.innerHTML = `
+        <span>✅ ClickUp authentication successful! Please configure your default workspace below.</span>
+        <button class="close-btn" onclick="closeSuccessMessage()" title="Close">&times;</button>
+      `;
+
+      // Insert after the error div (if it exists) or at the beginning of the body
+      const errorDiv = document.querySelector('.error');
+      if (errorDiv) {
+        errorDiv.parentNode.insertBefore(successMessage, errorDiv.nextSibling);
+      } else {
+        const header = document.querySelector('.header');
+        header.parentNode.insertBefore(successMessage, header.nextSibling);
+      }
+
+      // Auto-fade after 8 seconds
+      setTimeout(() => {
+        if (successMessage && !successMessage.classList.contains('fade-out')) {
+          closeSuccessMessage();
+        }
+      }, 8000);
+    }
+
+    function updateClickUpUI(clickupData) {
+      // Update the ClickUp status indicator
+      const statusIndicator = document.querySelector('.clickup-section .status-indicator');
+      const statusText = statusIndicator?.nextElementSibling;
+
+      if (statusIndicator && statusText) {
+        statusIndicator.className = 'status-indicator status-connected';
+        statusText.textContent = 'Connected to ClickUp';
+
+        // Add configuration needed text
+        const configText = document.createElement('span');
+        configText.style.marginLeft = '10px';
+        configText.style.color = '#F59E0B';
+        configText.textContent = '⚠️ Configuration needed';
+        statusText.parentNode.appendChild(configText);
+      }
+
+      // Show the workspace selector
+      const clickupSection = document.querySelector('.clickup-section');
+      const connectButton = clickupSection?.querySelector('.btn-clickup');
+
+      if (connectButton && connectButton.textContent.includes('Connect ClickUp')) {
+        // Replace the connect button with workspace selector
+        const workspaceSelector = document.createElement('div');
+        workspaceSelector.innerHTML = `
+          <p>Choose your default workspace and list for task creation:</p>
+          <div class="workspace-selector">
+            <select id="workspaceSelect" onchange="onWorkspaceChange()">
+              <option value="">Select a workspace...</option>
+            </select>
+            <button id="configureBtn" class="btn btn-clickup" onclick="configureClickUp()" disabled>
+              ✅ Configure Default List
+            </button>
+          </div>
+        `;
+
+        connectButton.parentNode.replaceChild(workspaceSelector, connectButton);
+      }
+    }
+
+    // Load current user state on page load to fix JWT cookie timing issues
+    window.addEventListener('DOMContentLoaded', function() {
+      refreshUserState();
+    });
+
+    async function refreshUserState() {
+      try {
+        const response = await fetch('/api/user-state');
+        const data = await response.json();
+
+        if (data.authenticated) {
+          console.log('🔄 Refreshing UI with current user state:', data);
+
+          // Update emails if they exist
+          if (data.emails && data.emails.length > 0) {
+            updateEmailsDisplay(data.emails);
+            // Hide the fetch emails button since emails are already loaded
+            const fetchButton = document.getElementById('fetchEmailsBtn');
+            if (fetchButton) {
+              fetchButton.style.display = 'none';
+            }
+          }
+
+          // Update ClickUp state if connected
+          if (data.clickup && data.clickup.access_token) {
+            console.log('🔍 ClickUp data in refreshUserState:', data.clickup);
+            if (data.clickup.configured) {
+              // Show configured state
+              console.log('🔧 ClickUp is configured, updating UI');
+              updateClickUpConfiguredUI(data.clickup.defaultList);
+            } else {
+              // Show connected but not configured state
+              console.log('🔗 ClickUp is connected but not configured, loading workspaces');
+              updateClickUpUI({ teams: data.clickup.teams });
+              // Load workspaces for configuration
+              setTimeout(() => {
+                console.log('⏰ Calling loadWorkspaces() after timeout');
+                loadWorkspaces();
+              }, 500);
+            }
+          } else {
+            console.log('❌ No ClickUp access_token found in user state:', data.clickup);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error refreshing user state:', error);
+      }
+    }
+
+    async function loadWorkspaces() {
+      try {
+        console.log('🌐 Making request to /client-auth/clickup/workspaces...');
+        const response = await fetch('/client-auth/clickup/workspaces');
+        console.log('📡 Response received:', response.status, response.statusText);
+
+        const data = await response.json();
+        console.log('📊 Response data:', data);
+
+        if (data.workspaces) {
+          workspaces = data.workspaces;
+          console.log(`✅ Loaded ${workspaces.length} workspaces`);
+          populateWorkspaceSelect();
+        } else {
+          console.error('❌ Failed to load workspaces:', data.error);
+        }
+      } catch (error) {
+        console.error('❌ Error loading workspaces:', error);
       }
     }
 
@@ -673,14 +865,43 @@
         const data = await response.json();
 
         if (data.success) {
+          // Update JWT token cookie immediately for Vercel compatibility
+          if (data.newToken) {
+            updateJWTCookie(data.newToken);
+          }
+
+          // Update the UI to show configured state
+          updateClickUpConfiguredUI(data.defaultList);
           alert('ClickUp configuration saved successfully!');
-          window.location.reload();
         } else {
           alert('Failed to save configuration: ' + data.error);
         }
       } catch (error) {
         console.error('Error configuring ClickUp:', error);
         alert('Error configuring ClickUp. Please try again.');
+      }
+    }
+
+    function updateClickUpConfiguredUI(defaultList) {
+      // Update the ClickUp section to show configured state
+      const clickupSection = document.querySelector('.clickup-section');
+      const statusIndicator = clickupSection.querySelector('.status-indicator');
+      const statusText = statusIndicator?.nextElementSibling;
+
+      if (statusIndicator && statusText) {
+        statusIndicator.className = 'status-indicator status-connected';
+        statusText.innerHTML = `Connected to ClickUp <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: ${defaultList.name})</span>`;
+      }
+
+      // Replace workspace selector with configured message and reconfigure button
+      const workspaceSelector = clickupSection.querySelector('.workspace-selector');
+      if (workspaceSelector) {
+        const configuredDiv = document.createElement('div');
+        configuredDiv.innerHTML = `
+          <p>✅ ClickUp is configured and ready! Tasks will be created in: <strong>${defaultList.name}</strong></p>
+          <button class="btn btn-clickup" onclick="reconfigureClickUp()">🔄 Reconfigure</button>
+        `;
+        workspaceSelector.parentNode.replaceChild(configuredDiv, workspaceSelector);
       }
     }
 
@@ -697,6 +918,145 @@
           window.location.reload();
         });
       }
+    }
+
+    // Email fetching function
+    async function fetchEmails() {
+      const button = document.getElementById('fetchEmailsBtn');
+      const statusDiv = document.getElementById('fetch-status');
+
+      // Disable button and show loading
+      button.disabled = true;
+      button.innerHTML = '⏳ Fetching Emails...';
+
+      statusDiv.style.display = 'block';
+      statusDiv.className = 'processing-status loading';
+      statusDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="spinner"></div>
+          <span>📧 Fetching your latest emails from Gmail...</span>
+        </div>
+      `;
+
+      try {
+        const response = await fetch('/emails/recent', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          console.log('✅ Emails fetched successfully:', data);
+
+          // Update JWT token cookie immediately for Vercel compatibility
+          if (data.newToken) {
+            updateJWTCookie(data.newToken);
+          }
+
+          // Show success status
+          statusDiv.className = 'processing-status success';
+          statusDiv.innerHTML = `
+            <div>✅ Successfully fetched ${data.emailCount} emails! Updating display...</div>
+          `;
+
+          // Update the UI with the fetched emails
+          setTimeout(() => {
+            updateEmailsDisplay(data.emails);
+            // Hide the fetch button and status
+            button.style.display = 'none';
+            statusDiv.style.display = 'none';
+          }, 1000);
+
+        } else {
+          console.error('❌ Email fetching failed:', data);
+          throw new Error(data.error || 'Failed to fetch emails');
+        }
+
+      } catch (error) {
+        console.error('❌ Error fetching emails:', error);
+
+        // Show error status
+        statusDiv.className = 'processing-status error';
+        statusDiv.innerHTML = `
+          <div>❌ Error: ${error.message}</div>
+          <div style="margin-top: 8px;">
+            <button class="btn" onclick="retryFetchEmails()" style="font-size: 12px; padding: 6px 12px;">
+              🔄 Retry
+            </button>
+          </div>
+        `;
+
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '📧 Fetch Latest Emails';
+      }
+    }
+
+    function retryFetchEmails() {
+      // Reset status and retry
+      const statusDiv = document.getElementById('fetch-status');
+      statusDiv.style.display = 'none';
+      fetchEmails();
+    }
+
+    function updateEmailsDisplay(emails) {
+      // Remove the empty state if it exists
+      const emptyState = document.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      // Find the container where emails should be displayed
+      let emailContainer = document.querySelector('.email-container');
+      if (!emailContainer) {
+        // Create email container after the ClickUp section
+        const clickupSection = document.querySelector('.clickup-section');
+        emailContainer = document.createElement('div');
+        emailContainer.className = 'email-container';
+        emailContainer.innerHTML = '<h2>📬 Your Recent Emails</h2>';
+        clickupSection.parentNode.insertBefore(emailContainer, clickupSection.nextSibling);
+      }
+
+      // Clear existing emails
+      const existingEmails = emailContainer.querySelectorAll('.email-card');
+      existingEmails.forEach(card => card.remove());
+
+      // Add new emails
+      emails.forEach(email => {
+        const emailCard = document.createElement('div');
+        emailCard.className = 'email-card';
+        emailCard.innerHTML = `
+          <div class="email-header">
+            <div class="email-subject">${escapeHtml(email.subject)}</div>
+            <div class="email-date">${escapeHtml(email.date)}</div>
+          </div>
+          <div class="email-from">From: ${escapeHtml(email.from)}</div>
+          <div class="email-snippet">${escapeHtml(email.snippet)}</div>
+          <div id="email-${email.id}-actions">
+            <button type="button" class="btn" onclick="processEmail('${email.id}')">
+              🚀 Create Task from Email
+            </button>
+            <div id="status-${email.id}" class="processing-status" style="display: none;"></div>
+          </div>
+        `;
+        emailContainer.appendChild(emailCard);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Function to update JWT cookie for Vercel compatibility
+    function updateJWTCookie(newToken) {
+      // Set the cookie with the new JWT token
+      document.cookie = `authToken=${newToken}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+      console.log('🍪 Updated JWT cookie with new token');
     }
 
     // Email processing functions
