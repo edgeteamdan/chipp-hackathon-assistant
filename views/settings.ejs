@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Settings - AutoTask AI</title>
+  <title>Settings - AutoTask</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
@@ -11,7 +11,7 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      max-width: 900px;
+      max-width: 80vw;
       margin: 0 auto;
       padding: 20px;
       background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
@@ -21,22 +21,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin: 0;
+      margin-bottom: 20px;
       background: rgba(254, 252, 232, 0.95);
       backdrop-filter: blur(10px);
-      padding: 20px;
+      padding: 15px 20px;
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.2);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+      flex-wrap: nowrap;
+      min-height: 60px;
+      width: 100%;
+      position: relative;
+      box-sizing: border-box;
+      gap: 20px;
     }
     .logo {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
+      flex: 0 0 auto;
+      min-width: 0;
     }
     .logo img {
       height: 40px;
       width: auto;
+      flex-shrink: 0;
     }
     .logo h1 {
       margin: 0;
@@ -46,11 +56,23 @@
       background-clip: text;
       font-size: 1.5rem;
       font-weight: 700;
+      white-space: nowrap;
     }
-    .logo .subtitle {
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .subtitle {
       color: #6B7280;
       font-size: 0.875rem;
-      margin-left: 10px;
+      white-space: nowrap;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .settings-container {
       background: rgba(254, 252, 232, 0.95);
@@ -142,16 +164,88 @@
       color: #D97706;
       text-decoration: underline;
     }
+
+    /* Responsive header - Progressive breakpoints to prevent overlapping */
+    @media (max-width: 1200px) {
+      .subtitle {
+        font-size: 0.8rem;
+      }
+      .header {
+        gap: 15px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .subtitle {
+        font-size: 0.75rem;
+      }
+      .header {
+        gap: 12px;
+        padding: 12px 16px;
+      }
+      .logo h1 {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .header-center {
+        display: none;
+      }
+      .header {
+        justify-content: space-between;
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 15px;
+      }
+      .logo {
+        justify-content: center;
+        flex: none;
+      }
+      .logo h1 {
+        font-size: 1.25rem;
+      }
+      .header-center {
+        display: flex;
+        order: 3;
+      }
+      .subtitle {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 12px;
+      }
+      .logo h1 {
+        font-size: 1.125rem;
+      }
+      .logo img {
+        height: 32px;
+      }
+      .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">
-      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
-      <div>
-        <h1>AutoTask AI Settings</h1>
-        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
-      </div>
+    <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+      <img src="/images/autotask-logo.svg" alt="AutoTask Logo">
+      <h1>AutoTask</h1>
+    </a>
+    <div class="header-center">
+      <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
     </div>
     <div>
       <a href="/instructions" class="btn btn-secondary">📖 Instructions</a>
@@ -166,7 +260,13 @@
 
     <!-- Import Options -->
     <div class="import-section" style="margin-bottom: 32px; padding: 24px; background: rgba(255, 255, 255, 0.7); border-radius: 12px; border-left: 4px solid #10B981;">
-      <h3 style="margin: 0 0 16px 0; color: #374151;">🚀 Quick Import Options</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; color: #374151;">📦 Bulk Import Options</h3>
+        <button type="button" onclick="toggleImportSection()" class="btn btn-secondary" id="import-toggle-btn" style="padding: 8px 16px; font-size: 14px;">
+          ▼ Show Options
+        </button>
+      </div>
+      <div id="import-content" style="display: none;">
 
       <!-- .env File Import -->
       <div class="import-option" style="margin-bottom: 20px;">
@@ -200,6 +300,7 @@ CLICKUP_CLIENT_SECRET=XXXXXXXX" style="width: 100%; height: 120px; padding: 12px
         <p style="margin: 0 0 12px 0; color: #6B7280; font-size: 14px;">Upload a .env, .json, or .txt file with your credentials:</p>
         <input type="file" id="file-import" accept=".env,.json,.txt" style="margin-bottom: 8px;">
         <button type="button" onclick="importFromFile()" class="btn" style="margin-left: 8px;">📥 Import from File</button>
+      </div>
       </div>
     </div>
 
@@ -260,6 +361,20 @@ CLICKUP_CLIENT_SECRET=XXXXXXXX" style="width: 100%; height: 120px; padding: 12px
       loadSettings();
       loadCallbackUrls();
     });
+
+    // Toggle import section visibility
+    function toggleImportSection() {
+      const content = document.getElementById('import-content');
+      const button = document.getElementById('import-toggle-btn');
+
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        button.textContent = '▲ Hide Options';
+      } else {
+        content.style.display = 'none';
+        button.textContent = '▼ Show Options';
+      }
+    }
 
     async function loadCallbackUrls() {
       try {
@@ -470,7 +585,7 @@ CLICKUP_CLIENT_SECRET=XXXXXXXX" style="width: 100%; height: 120px; padding: 12px
     }
 
     function exportAsEnv(settings) {
-      const envData = `# AutoTask AI Configuration
+      const envData = `# AutoTask Configuration
 # Generated on ${new Date().toISOString()}
 
 CHIPP_API_KEY=${settings.chippApiKey || ''}

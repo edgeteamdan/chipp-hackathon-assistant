@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Instructions - AutoTask AI</title>
+  <title>Setup Instructions - AutoTask</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
@@ -11,7 +11,7 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      max-width: 1000px;
+      max-width: 80vw;
       margin: 0 auto;
       padding: 20px;
       background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
@@ -21,22 +21,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin: 0;
+      margin-bottom: 20px;
       background: rgba(254, 252, 232, 0.95);
       backdrop-filter: blur(10px);
-      padding: 20px;
+      padding: 15px 20px;
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.2);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+      flex-wrap: nowrap;
+      min-height: 60px;
+      width: 100%;
+      position: relative;
+      box-sizing: border-box;
+      gap: 20px;
     }
     .logo {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
+      flex: 0 0 auto;
+      min-width: 0;
     }
     .logo img {
       height: 40px;
       width: auto;
+      flex-shrink: 0;
     }
     .logo h1 {
       margin: 0;
@@ -46,11 +56,23 @@
       background-clip: text;
       font-size: 1.5rem;
       font-weight: 700;
+      white-space: nowrap;
     }
-    .logo .subtitle {
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .subtitle {
       color: #6B7280;
       font-size: 0.875rem;
-      margin-left: 10px;
+      white-space: nowrap;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .instructions-container {
       background: rgba(254, 252, 232, 0.95);
@@ -193,16 +215,88 @@
       margin: 16px 0;
       font-style: italic;
     }
+
+    /* Responsive header - Progressive breakpoints to prevent overlapping */
+    @media (max-width: 1200px) {
+      .subtitle {
+        font-size: 0.8rem;
+      }
+      .header {
+        gap: 15px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .subtitle {
+        font-size: 0.75rem;
+      }
+      .header {
+        gap: 12px;
+        padding: 12px 16px;
+      }
+      .logo h1 {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .header-center {
+        display: none;
+      }
+      .header {
+        justify-content: space-between;
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 15px;
+      }
+      .logo {
+        justify-content: center;
+        flex: none;
+      }
+      .logo h1 {
+        font-size: 1.25rem;
+      }
+      .header-center {
+        display: flex;
+        order: 3;
+      }
+      .subtitle {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 12px;
+      }
+      .logo h1 {
+        font-size: 1.125rem;
+      }
+      .logo img {
+        height: 32px;
+      }
+      .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">
-      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
-      <div>
-        <h1>Setup Instructions</h1>
-        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
-      </div>
+    <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+      <img src="/images/autotask-logo.svg" alt="AutoTask Logo">
+      <h1>AutoTask</h1>
+    </a>
+    <div class="header-center">
+      <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="edgeteam-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
     </div>
     <div>
       <a href="/settings" class="btn">⚙️ Settings</a>
@@ -212,7 +306,7 @@
 
   <div class="instructions-container">
     <h2>🚀 Complete Setup Guide</h2>
-    <p>Follow these step-by-step instructions to configure AutoTask AI with your own API credentials. This ensures your data stays secure and private.</p>
+    <p>Follow these step-by-step instructions to configure AutoTask with your own API credentials. This ensures your data stays secure and private.</p>
 
     <div class="success">
       <strong>🔒 Privacy First:</strong> All your API keys and credentials are stored locally in your browser. Nothing is sent to our servers, ensuring maximum security and privacy.
@@ -252,7 +346,7 @@
         <ol>
           <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
           <li>Click <strong>"Select a project"</strong> → <strong>"New Project"</strong></li>
-          <li>Enter a project name (e.g., "AutoTask AI")</li>
+          <li>Enter a project name (e.g., "AutoTask")</li>
           <li>Click <strong>"Create"</strong></li>
         </ol>
 
@@ -311,7 +405,7 @@
           <li>Click <strong>"+ Create an App"</strong></li>
           <li>Fill in the app details:
             <ul>
-              <li><strong>App Name:</strong> AutoTask AI (or your preferred name)</li>
+              <li><strong>App Name:</strong> AutoTask (or your preferred name)</li>
               <li><strong>Description:</strong> Email to task automation</li>
             </ul>
           </li>
@@ -407,7 +501,7 @@ You MUST respond with a JSON object in this exact format:
         </ol>
 
         <div class="success">
-          <strong>✅ Pro Tip:</strong> This system prompt ensures your Chipp.ai assistant outputs properly formatted JSON that AutoTask AI can process to create ClickUp tasks automatically!
+          <strong>✅ Pro Tip:</strong> This system prompt ensures your Chipp.ai assistant outputs properly formatted JSON that AutoTask can process to create ClickUp tasks automatically!
         </div>
       </div>
     </div>
@@ -419,7 +513,7 @@ You MUST respond with a JSON object in this exact format:
         Configure Your Settings
       </div>
       <div class="step-content">
-        <p>Now enter all your credentials in the AutoTask AI settings page.</p>
+        <p>Now enter all your credentials in the AutoTask settings page.</p>
 
         <ol>
           <li>Go to the <a href="/settings" target="_blank">Settings Page</a></li>

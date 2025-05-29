@@ -125,6 +125,6 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 AutoTask AI server running on http://localhost:${PORT}`);
+  console.log(`🚀 AutoTask server running on http://localhost:${PORT}`);
   console.log('📧 Powered by EdgeTeam × Chipp.ai - Ready to transform emails into tasks!');
 });

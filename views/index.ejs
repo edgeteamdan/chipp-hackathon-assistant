@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoTask AI - Powered by EdgeTeam × Chipp.ai</title>
+  <title>AutoTask - Powered by EdgeTeam × Chipp</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" href="/images/edgeteam-logo.png">
@@ -11,7 +11,7 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      max-width: 900px;
+      max-width: 80vw;
       margin: 0 auto;
       padding: 20px;
       background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #F59E0B 100%);
@@ -21,22 +21,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin: 0;
+      margin-bottom: 20px;
       background: rgba(254, 252, 232, 0.95);
       backdrop-filter: blur(10px);
-      padding: 20px;
+      padding: 15px 20px;
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.2);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+      flex-wrap: nowrap;
+      min-height: 60px;
+      width: 100%;
+      position: relative;
+      box-sizing: border-box;
+      gap: 20px;
     }
     .logo {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
+      flex: 0 0 auto;
+      min-width: 0;
     }
     .logo img {
       height: 40px;
       width: auto;
+      flex-shrink: 0;
     }
     .logo h1 {
       margin: 0;
@@ -46,54 +56,306 @@
       background-clip: text;
       font-size: 1.5rem;
       font-weight: 700;
+      white-space: nowrap;
     }
-    .logo .subtitle {
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .subtitle {
       color: #6B7280;
       font-size: 0.875rem;
-      margin-left: 10px;
+      white-space: nowrap;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .user-info {
       display: flex;
       align-items: center;
       gap: 15px;
+      flex-shrink: 0;
+      min-width: 0;
     }
     .user-info img {
       border-radius: 50%;
       width: 40px;
       height: 40px;
     }
-    .email-card {
-      background: rgba(254, 252, 232, 0.95);
+    .user-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .user-profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+    }
+    .user-profile-btn:hover {
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .user-profile-btn img {
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+    }
+    .user-profile-btn span {
+      font-weight: 500;
+      color: #1F2937;
+      font-size: 0.9rem;
+    }
+    .dropdown-arrow {
+      font-size: 0.7rem;
+      color: #6B7280;
+      transition: transform 0.2s ease;
+    }
+    .user-dropdown.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
       border: 1px solid rgba(245, 158, 11, 0.2);
-      transition: all 0.3s ease;
+      min-width: 180px;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+    }
+    .user-dropdown.open .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .dropdown-menu a {
+      display: block;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: #1F2937;
+      font-size: 0.9rem;
+      transition: background-color 0.2s ease;
+      border-radius: 8px;
+      margin: 4px;
+    }
+    .dropdown-menu a:hover {
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .dropdown-menu a:first-child {
+      margin-top: 8px;
+    }
+    .dropdown-menu a:last-child {
+      margin-bottom: 8px;
+    }
+
+    /* Responsive header - Progressive breakpoints to prevent overlapping */
+    @media (max-width: 1200px) {
+      .subtitle {
+        font-size: 0.8rem;
+      }
+      .header {
+        gap: 15px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .subtitle {
+        font-size: 0.75rem;
+      }
+      .header {
+        gap: 12px;
+        padding: 12px 16px;
+      }
+      .logo h1 {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .header-center {
+        display: none;
+      }
+      .header {
+        justify-content: space-between;
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 15px;
+      }
+      .logo {
+        justify-content: center;
+        flex: none;
+      }
+      .logo h1 {
+        font-size: 1.25rem;
+      }
+      .user-info {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .header-center {
+        display: flex;
+        order: 3;
+      }
+      .subtitle {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        padding: 12px;
+      }
+      .logo h1 {
+        font-size: 1.125rem;
+      }
+      .logo img {
+        height: 32px;
+      }
+      .user-info {
+        gap: 8px;
+      }
+      .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+    }
+    .email-card {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 2px;
+      box-shadow: 0 1px 3px rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.1);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     .email-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(245, 158, 11, 0.2);
+      background: rgba(254, 252, 232, 0.8);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
     }
-    .email-header {
+    .email-header-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 15px;
+      align-items: center;
+      gap: 15px;
+    }
+    .email-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .email-from {
+      color: #1F2937;
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      min-width: 120px;
+      flex-shrink: 0;
     }
     .email-subject {
-      font-weight: bold;
-      font-size: 1.1em;
-      color: #333;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #1F2937;
+      flex: 1;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .email-from, .email-date {
-      color: #666;
-      font-size: 0.9em;
+    .email-date {
+      color: #6B7280;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 60px;
+      text-align: right;
+    }
+    .email-content-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
     }
     .email-snippet {
-      margin-bottom: 15px;
-      color: #555;
+      color: #4B5563;
       line-height: 1.5;
+      font-size: 0.9rem;
+      flex: 1;
+      margin-right: 20px;
+    }
+    .email-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 180px;
+      flex-shrink: 0;
+      align-items: flex-end;
+    }
+
+    /* Responsive email layout */
+    @media (max-width: 768px) {
+      .email-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .email-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        width: 100%;
+      }
+      .email-from {
+        min-width: auto;
+      }
+      .email-subject {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: initial;
+      }
+      .email-date {
+        min-width: auto;
+        text-align: left;
+      }
+      .email-content-row {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .email-actions {
+        min-width: auto;
+        width: 100%;
+        align-items: stretch;
+      }
+      .email-snippet {
+        margin-right: 0;
+      }
     }
     .chipp-response {
       background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
@@ -323,20 +585,27 @@
 </head>
 <body>
   <div class="header">
-    <div class="logo">
-      <img src="/images/edgeteam-logo.png" alt="EdgeTeam Logo">
-      <div>
-        <h1>AutoTask AI</h1>
-        <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="chipp-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
-      </div>
+    <a href="/" class="logo" style="text-decoration: none; color: inherit;">
+      <img src="/images/autotask-logo.svg" alt="AutoTask Logo">
+      <h1>AutoTask</h1>
+    </a>
+    <div class="header-center">
+      <span class="subtitle">Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="chipp-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></span>
     </div>
     <% if (user) { %>
       <div class="user-info">
-        <img src="<%= user.picture %>" alt="Profile">
-        <span><%= user.name %></span>
         <a href="/instructions" class="btn btn-secondary">📖 Instructions</a>
-        <a href="/settings" class="btn btn-secondary">⚙️ Settings</a>
-        <a href="/auth/logout" class="btn">Logout</a>
+        <div class="user-dropdown">
+          <button class="user-profile-btn" onclick="toggleUserDropdown()">
+            <img src="<%= user.picture %>" alt="Profile">
+            <span><%= user.name %></span>
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="dropdown-menu">
+            <a href="/settings">⚙️ Settings</a>
+            <a href="/auth/logout">🚪 Logout</a>
+          </div>
+        </div>
       </div>
     <% } else { %>
       <div class="user-info">
@@ -384,18 +653,23 @@
     <div class="clickup-section">
       <h3>🔗 ClickUp Integration</h3>
       <div class="clickup-status">
-        <% if (clickup && clickup.access_token) { %>
-          <div class="status-indicator status-connected"></div>
-          <span>Connected to ClickUp</span>
-          <% if (clickup.configured && clickup.defaultList) { %>
-            <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: <%= clickup.defaultList.name %>)</span>
+        <div class="status-indicator <% if (clickup && clickup.access_token) { %>status-connected<% } else { %>status-disconnected<% } %>"></div>
+        <span id="clickup-status-text">
+          <% if (clickup && clickup.access_token) { %>
+            Connected to ClickUp
           <% } else { %>
-            <span style="margin-left: 10px; color: #F59E0B;">⚠️ Configuration needed</span>
+            Not connected to ClickUp
           <% } %>
-        <% } else { %>
-          <div class="status-indicator status-disconnected"></div>
-          <span>Not connected to ClickUp</span>
-        <% } %>
+        </span>
+        <span id="clickup-status-message">
+          <% if (clickup && clickup.access_token) { %>
+            <% if (clickup.configured && clickup.defaultList) { %>
+              <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: <%= clickup.defaultList.name %>)</span>
+            <% } else { %>
+              <span style="margin-left: 10px; color: #F59E0B;">⚠️ Configuration needed</span>
+            <% } %>
+          <% } %>
+        </span>
       </div>
 
       <% if (!clickup || !clickup.access_token) { %>
@@ -421,51 +695,60 @@
       <h2>📬 Your Recent Emails</h2>
       <% emails.forEach(email => { %>
         <div class="email-card">
-          <div class="email-header">
-            <div class="email-subject"><%= email.subject %></div>
+          <!-- Gmail-style header row: sender, subject, time -->
+          <div class="email-header-row">
+            <div class="email-meta">
+              <div class="email-from"><%= email.from.replace('From: ', '') %></div>
+              <div class="email-subject"><%= email.subject %></div>
+            </div>
             <div class="email-date"><%= email.date %></div>
           </div>
-          <div class="email-from">From: <%= email.from %></div>
-          <div class="email-snippet"><%= email.snippet %></div>
 
-          <div id="email-<%= email.id %>-actions">
-            <% if (email.chippResponse) { %>
-              <% if (email.clickupTaskUrl) { %>
-                <!-- ClickUp task was successfully created -->
-                <div class="success task-success">
-                  <span>✅ Task created successfully!</span>
-                  <button class="close-btn" onclick="closeTaskSuccess('<%= email.id %>')" title="Close">&times;</button>
-                </div>
-                <div class="task-link-container">
-                  <a href="<%= email.clickupTaskUrl %>" target="_blank" class="btn btn-clickup">
-                    🔗 View Task in ClickUp
-                  </a>
-                </div>
-              <% } else { %>
-                <!-- Show full response for non-ClickUp responses -->
-                <div class="chipp-response">
-                  <h3>🎯 AutoTask AI Suggestion:</h3>
-                  <div class="response-content"><%= email.chippResponse %></div>
-                </div>
-              <% } %>
-            <% } else { %>
-              <button type="button" class="btn" onclick="processEmail('<%= email.id %>')">
-                🚀 Create Task from Email
-              </button>
-              <div id="status-<%= email.id %>" class="processing-status" style="display: none;"></div>
-            <% } %>
+          <!-- Gmail-style content row: snippet on left, actions on right -->
+          <div class="email-content-row">
+            <div class="email-snippet"><%= email.snippet %></div>
+
+            <div class="email-actions">
+              <div id="email-<%= email.id %>-actions">
+                <% if (email.chippResponse) { %>
+                  <% if (email.clickupTaskUrl) { %>
+                    <!-- ClickUp task was successfully created -->
+                    <div class="success task-success">
+                      <span>✅ Task created successfully!</span>
+                      <button class="close-btn" onclick="closeTaskSuccess('<%= email.id %>')" title="Close">&times;</button>
+                    </div>
+                    <div class="task-link-container">
+                      <a href="<%= email.clickupTaskUrl %>" target="_blank" class="btn btn-clickup">
+                        🔗 View Task in ClickUp
+                      </a>
+                    </div>
+                  <% } else { %>
+                    <!-- Show full response for non-ClickUp responses -->
+                    <div class="chipp-response">
+                      <h3>🎯 AutoTask Suggestion:</h3>
+                      <div class="response-content"><%= email.chippResponse %></div>
+                    </div>
+                  <% } %>
+                <% } else { %>
+                  <button type="button" class="btn" onclick="processEmail('<%= email.id %>')">
+                    🚀 Create Task
+                  </button>
+                  <div id="status-<%= email.id %>" class="processing-status" style="display: none;"></div>
+                <% } %>
+              </div>
+            </div>
           </div>
         </div>
       <% }) %>
     <% } else if (user) { %>
       <div class="empty-state">
         <h3>📭 No emails loaded yet</h3>
-        <p>Click "Fetch Latest Emails" to get started with AutoTask AI!</p>
+        <p>Click "Fetch Latest Emails" to get started with AutoTask!</p>
       </div>
     <% } %>
   <% } else { %>
     <div class="intro">
-      <h2>🎯 Welcome to AutoTask AI</h2>
+      <h2>🎯 Welcome to AutoTask</h2>
       <p><strong>Powered by <a href="https://edgeteam.io" target="_blank" class="edgeteam-link"><img src="/images/edgeteam-logo.png" alt="EdgeTeam" style="height: 16px; width: auto; vertical-align: middle; margin-right: 4px;">EdgeTeam</a> × <a href="https://chipp.ai" target="_blank" class="chipp-link"><img src="/images/chipp-logo.svg" alt="Chipp.ai" style="height: 16px; width: auto; vertical-align: middle;"></a></strong></p>
       <p>Transform your Gmail inbox into actionable ClickUp tasks automatically using advanced AI!</p>
       <p>This intelligent assistant analyzes your emails and suggests comprehensive task details:</p>
@@ -479,7 +762,7 @@
 
       <div style="margin-top: 24px; padding: 20px; background: #FEF3C7; border-radius: 12px; border: 2px solid #F59E0B;">
         <h3 style="margin: 0 0 12px 0; color: #92400E;">🔧 First Time Setup Required</h3>
-        <p style="margin: 0 0 16px 0; color: #92400E;">Before you can use AutoTask AI, you'll need to configure your API credentials for security and privacy.</p>
+        <p style="margin: 0 0 16px 0; color: #92400E;">Before you can use AutoTask, you'll need to configure your API credentials for security and privacy.</p>
         <a href="/instructions" class="btn" style="margin-right: 12px;">📖 View Setup Instructions</a>
         <a href="/settings" class="btn btn-secondary">⚙️ Go to Settings</a>
       </div>
@@ -694,22 +977,32 @@
       }, 8000);
     }
 
-    function updateClickUpUI(clickupData) {
-      // Update the ClickUp status indicator
+    // Helper function to update ClickUp status message
+    function updateClickUpStatus(statusText, statusMessage, isConnected = true) {
       const statusIndicator = document.querySelector('.clickup-section .status-indicator');
-      const statusText = statusIndicator?.nextElementSibling;
+      const statusTextElement = document.getElementById('clickup-status-text');
+      const statusMessageElement = document.getElementById('clickup-status-message');
 
-      if (statusIndicator && statusText) {
-        statusIndicator.className = 'status-indicator status-connected';
-        statusText.textContent = 'Connected to ClickUp';
-
-        // Add configuration needed text
-        const configText = document.createElement('span');
-        configText.style.marginLeft = '10px';
-        configText.style.color = '#F59E0B';
-        configText.textContent = '⚠️ Configuration needed';
-        statusText.parentNode.appendChild(configText);
+      if (statusIndicator) {
+        statusIndicator.className = `status-indicator ${isConnected ? 'status-connected' : 'status-disconnected'}`;
       }
+
+      if (statusTextElement) {
+        statusTextElement.textContent = statusText;
+      }
+
+      if (statusMessageElement) {
+        statusMessageElement.innerHTML = statusMessage;
+      }
+    }
+
+    function updateClickUpUI(clickupData) {
+      // Update status to connected but not configured
+      updateClickUpStatus(
+        'Connected to ClickUp',
+        '<span style="margin-left: 10px; color: #F59E0B; font-weight: 500;">⚠️ Configuration needed</span>',
+        true
+      );
 
       // Show the workspace selector
       const clickupSection = document.querySelector('.clickup-section');
@@ -883,24 +1176,15 @@
     }
 
     function updateClickUpConfiguredUI(defaultList) {
-      // Update the ClickUp section to show configured state
-      const clickupSection = document.querySelector('.clickup-section');
-      const statusIndicator = clickupSection.querySelector('.status-indicator');
-      const statusText = statusIndicator?.nextElementSibling;
-
-      if (statusIndicator && statusText) {
-        statusIndicator.className = 'status-indicator status-connected';
-        // Remove any existing warning text and replace with configured status
-        statusText.innerHTML = `Connected to ClickUp <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: ${defaultList.name})</span>`;
-
-        // Remove any configuration warning elements
-        const configWarning = statusText.parentNode.querySelector('span[style*="color: #F59E0B"]');
-        if (configWarning) {
-          configWarning.remove();
-        }
-      }
+      // Update status to connected and configured
+      updateClickUpStatus(
+        'Connected to ClickUp',
+        `<span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: ${defaultList.name})</span>`,
+        true
+      );
 
       // Replace workspace selector with configured message and reconfigure button
+      const clickupSection = document.querySelector('.clickup-section');
       const workspaceSelector = clickupSection.querySelector('.workspace-selector');
       if (workspaceSelector) {
         const configuredDiv = document.createElement('div');
@@ -1059,7 +1343,7 @@
             // Show full response for non-ClickUp responses
             actionsHtml = `
               <div class="chipp-response">
-                <h3>🎯 AutoTask AI Suggestion:</h3>
+                <h3>🎯 AutoTask Suggestion:</h3>
                 <div class="response-content">${escapeHtml(email.chippResponse).replace(/\n/g, '<br>')}</div>
               </div>
             `;
@@ -1075,14 +1359,18 @@
         }
 
         emailCard.innerHTML = `
-          <div class="email-header">
-            <div class="email-subject">${escapeHtml(email.subject)}</div>
-            <div class="email-date">${escapeHtml(email.date)}</div>
+          <div class="email-content">
+            <div class="email-header">
+              <div class="email-subject">${escapeHtml(email.subject)}</div>
+              <div class="email-date">${escapeHtml(email.date)}</div>
+            </div>
+            <div class="email-from">From: ${escapeHtml(email.from)}</div>
+            <div class="email-snippet">${escapeHtml(email.snippet)}</div>
           </div>
-          <div class="email-from">From: ${escapeHtml(email.from)}</div>
-          <div class="email-snippet">${escapeHtml(email.snippet)}</div>
-          <div id="email-${email.id}-actions">
-            ${actionsHtml}
+          <div class="email-actions">
+            <div id="email-${email.id}-actions">
+              ${actionsHtml}
+            </div>
           </div>
         `;
         emailContainer.appendChild(emailCard);
@@ -1209,6 +1497,22 @@
         }, 500);
       }
     }
+
+    // User dropdown toggle functionality
+    function toggleUserDropdown() {
+      const dropdown = document.querySelector('.user-dropdown');
+      dropdown.classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.querySelector('.user-dropdown');
+      const profileBtn = document.querySelector('.user-profile-btn');
+
+      if (dropdown && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('open');
+      }
+    });
 
     // Auto-fade success message after 8 seconds
     <% if (clickupAuth === 'success') { %>
