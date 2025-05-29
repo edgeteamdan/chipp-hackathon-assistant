@@ -76,16 +76,28 @@ app.get('/api/user-state', (req, res) => {
 
 // Home route
 app.get('/', (req, res) => {
-  // Minimal logging for home route
-  if (req.user?.emails?.length > 0 || req.user?.clickup?.access_token) {
-    console.log(`🏠 Home route - User: ${req.user?.email || 'none'} - Emails: ${req.user?.emails?.length || 0} - ClickUp: ${req.user?.clickup?.configured ? 'configured' : req.user?.clickup?.access_token ? 'connected' : 'not connected'}`);
+  // Check in-memory store first, then fall back to JWT token
+  let emails = [];
+  let clickup = null;
+
+  if (req.user) {
+    const userId = req.user.id || req.user.email;
+    const storedData = userDataStore.get(userId);
+
+    emails = storedData?.emails || req.user?.emails || [];
+    clickup = storedData?.clickup || req.user?.clickup || null;
+
+    // Minimal logging for home route
+    if (emails.length > 0 || clickup?.access_token) {
+      console.log(`🏠 Home route - User: ${req.user?.email || 'none'} - Emails: ${emails.length} (${storedData?.emails ? 'from store' : 'from JWT'}) - ClickUp: ${clickup?.configured ? 'configured' : clickup?.access_token ? 'connected' : 'not connected'} (${storedData?.clickup ? 'from store' : 'from JWT'})`);
+    }
   }
 
   res.render('index', {
     user: req.user || null,
-    emails: req.user?.emails || [],
+    emails: emails,
     error: req.query.error || null,
-    clickup: req.user?.clickup || null,
+    clickup: clickup,
     clickupAuth: req.query.clickup_auth || null
   });
 });

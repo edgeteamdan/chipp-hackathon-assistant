@@ -448,11 +448,6 @@
                   <div class="response-content"><%= email.chippResponse %></div>
                 </div>
               <% } %>
-              <% if (email.processedAt) { %>
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                  Processed: <%= new Date(email.processedAt).toLocaleString() %>
-                </div>
-              <% } %>
             <% } else { %>
               <button type="button" class="btn" onclick="processEmail('<%= email.id %>')">
                 🚀 Create Task from Email
@@ -752,9 +747,14 @@
         if (data.authenticated) {
           console.log('🔄 Refreshing UI with current user state:', data);
 
-          // Update emails if they exist
+          // Update emails if they exist and no emails are already displayed
           if (data.emails && data.emails.length > 0) {
-            updateEmailsDisplay(data.emails);
+            // Check if emails are already rendered server-side
+            const existingEmails = document.querySelectorAll('.email-card');
+            if (existingEmails.length === 0) {
+              // No server-side emails, use client-side rendering
+              updateEmailsDisplay(data.emails);
+            }
             // Hide the fetch emails button since emails are already loaded
             const fetchButton = document.getElementById('fetchEmailsBtn');
             if (fetchButton) {
@@ -890,7 +890,14 @@
 
       if (statusIndicator && statusText) {
         statusIndicator.className = 'status-indicator status-connected';
+        // Remove any existing warning text and replace with configured status
         statusText.innerHTML = `Connected to ClickUp <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: ${defaultList.name})</span>`;
+
+        // Remove any configuration warning elements
+        const configWarning = statusText.parentNode.querySelector('span[style*="color: #F59E0B"]');
+        if (configWarning) {
+          configWarning.remove();
+        }
       }
 
       // Replace workspace selector with configured message and reconfigure button
@@ -1028,6 +1035,45 @@
       emails.forEach(email => {
         const emailCard = document.createElement('div');
         emailCard.className = 'email-card';
+
+        // Check if email has been processed
+        const isProcessed = email.chippResponse || email.clickupTaskUrl;
+
+        let actionsHtml = '';
+        if (isProcessed) {
+          // Show processed results
+          if (email.clickupTaskUrl) {
+            // ClickUp task was successfully created - show clean success message
+            actionsHtml = `
+              <div class="success task-success">
+                <span>✅ Task created successfully!</span>
+                <button class="close-btn" onclick="closeTaskSuccess('${email.id}')" title="Close">&times;</button>
+              </div>
+              <div class="task-link-container">
+                <a href="${email.clickupTaskUrl}" target="_blank" class="btn btn-clickup">
+                  🔗 View Task in ClickUp
+                </a>
+              </div>
+            `;
+          } else {
+            // Show full response for non-ClickUp responses
+            actionsHtml = `
+              <div class="chipp-response">
+                <h3>🎯 AutoTask AI Suggestion:</h3>
+                <div class="response-content">${escapeHtml(email.chippResponse).replace(/\n/g, '<br>')}</div>
+              </div>
+            `;
+          }
+        } else {
+          // Show process button
+          actionsHtml = `
+            <button type="button" class="btn" onclick="processEmail('${email.id}')">
+              🚀 Create Task from Email
+            </button>
+            <div id="status-${email.id}" class="processing-status" style="display: none;"></div>
+          `;
+        }
+
         emailCard.innerHTML = `
           <div class="email-header">
             <div class="email-subject">${escapeHtml(email.subject)}</div>
@@ -1036,10 +1082,7 @@
           <div class="email-from">From: ${escapeHtml(email.from)}</div>
           <div class="email-snippet">${escapeHtml(email.snippet)}</div>
           <div id="email-${email.id}-actions">
-            <button type="button" class="btn" onclick="processEmail('${email.id}')">
-              🚀 Create Task from Email
-            </button>
-            <div id="status-${email.id}" class="processing-status" style="display: none;"></div>
+            ${actionsHtml}
           </div>
         `;
         emailContainer.appendChild(emailCard);

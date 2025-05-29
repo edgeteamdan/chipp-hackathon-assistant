@@ -227,14 +227,43 @@ router.post('/process/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
     const { chippApiKey } = req.body; // Get Chipp API key from client
 
+    console.log(`📧 Email processing endpoint called for ID: ${id}`);
+
     if (!chippApiKey) {
+      console.log('❌ No Chipp API key provided');
       return res.status(400).json({ error: 'Chipp API key required' });
     }
 
-    const email = req.user.emails?.find(e => e.id === id);
+    // Check in-memory store first, then fall back to JWT token
+    const userId = req.user.id || req.user.email;
+    const storedData = global.userDataStore?.get(userId);
+    const emails = storedData?.emails || req.user.emails || [];
+
+    console.log(`🔍 Email data source: ${storedData?.emails ? 'from store' : 'from JWT'}`);
+    console.log(`🔍 Available emails: ${emails.length}`);
+    console.log(`🔍 Looking for email ID: ${id}`);
+
+    const email = emails.find(e => e.id === id);
 
     if (!email) {
+      console.log(`❌ Email not found. Available IDs: ${emails.map(e => e.id).join(', ')}`);
       return res.status(404).json({ error: 'Email not found' });
+    }
+
+    console.log(`✅ Found email: ${email.subject}`);
+
+    // Also check ClickUp configuration from store
+    const clickupData = storedData?.clickup || req.user.clickup;
+    console.log(`🔍 ClickUp configured: ${!!clickupData?.configured}`);
+    console.log(`🔍 ClickUp access_token: ${!!clickupData?.access_token}`);
+    console.log(`🔍 ClickUp defaultList: ${!!clickupData?.defaultList}`);
+
+    // Update req.user with store data for compatibility with existing code
+    if (storedData?.emails) {
+      req.user.emails = emails;
+    }
+    if (storedData?.clickup) {
+      req.user.clickup = clickupData;
     }
 
     console.log(`🤖 Processing email with Chipp.ai: ${email.subject}`);
@@ -445,6 +474,15 @@ ClickUp integration is not configured. Please set up ClickUp to automatically cr
       sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000
     });
+
+    // Also update in-memory store to ensure UI reflects changes
+    if (global.userDataStore && storedData) {
+      global.userDataStore.set(userId, {
+        ...storedData,
+        emails: updatedEmails
+      });
+      console.log(`💾 Updated processed email in memory store for user: ${userId}`);
+    }
 
     // Check if response is empty and try session-based recovery
     if (!chippResponse || chippResponse.trim().length === 0) {
