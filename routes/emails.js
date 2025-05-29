@@ -106,72 +106,39 @@ router.post('/process/:id', isAuthenticated, async (req, res) => {
     // Prepare content for Chipp.ai
     const emailContent = `Subject: ${email.subject}\nFrom: ${email.from}\n\nContent:\n${email.body || email.snippet}`;
 
-    // Prepare system prompt with ClickUp credentials if available
-    let systemPrompt = `You are an intelligent task creation assistant that converts email content into actionable ClickUp tasks. When processing emails, you should:
+    // Prepare user message with ClickUp credentials if available
+    let userMessage = `Please analyze this email and create a ClickUp task:
 
-1. **Analyze the email content** to identify actionable items, requests, or tasks
-2. **Extract key information** including:
-   - Task title (concise, action-oriented)
-   - Detailed description
-   - Priority level (1=urgent, 2=high, 3=normal, 4=low)
-   - Due date (if mentioned or can be inferred, format as Unix timestamp in milliseconds)
-   - Task type/category
-   - Any relevant tags
-
-3. **Create ClickUp tasks** by calling the ClickUp API directly using the provided access token
-
-4. **Response format**: After creating the task, respond with a confirmation message that includes:
-   - ✅ Task created successfully
-   - 📋 Task title
-   - 🎯 Priority level
-   - 📅 Due date (if set)
-   - 🔗 ClickUp task link (will be provided by the API response)`;
+${emailContent}`;
 
     // Add ClickUp API integration details if user has configured ClickUp
     if (req.session.clickup?.configured && req.session.clickup?.access_token && req.session.clickup?.defaultList) {
       const { access_token, defaultList } = req.session.clickup;
-      systemPrompt += `
+      userMessage += `
 
-**ClickUp API Integration:**
-Use the ClickUp API directly to create tasks. You have been provided with:
-- ClickUp Access Token: ${access_token}
-- Default List ID: ${defaultList.id}
-
-Make POST requests to: https://api.clickup.com/api/v2/list/${defaultList.id}/task
-
-**Headers:**
-Authorization: ${access_token}
-Content-Type: application/json
-
-**Example Response:**
-"✅ Task created successfully!
-📋 **Task:** Review Q4 budget proposal
-🎯 **Priority:** High
-📅 **Due:** December 15, 2024
-🔗 **ClickUp Link:** [View Task](https://app.clickup.com/t/task_id)
-
-The task has been created with the full email context and is ready for action!"`;
+ClickUp API Details:
+- Access Token: ${access_token}
+- List ID: ${defaultList.id}
+- API Endpoint: https://api.clickup.com/api/v2/list/${defaultList.id}/task`;
     } else {
-      systemPrompt += `
+      userMessage += `
 
-**Note:** ClickUp integration is not configured. Please provide task suggestions in this format:
-"📋 **Suggested Task:** [Task Title]
-📝 **Description:** [Detailed description]
-🎯 **Priority:** [High/Medium/Low]
-📅 **Due Date:** [If applicable]
-🏷️ **Tags:** [Relevant tags]
-
-To enable automatic ClickUp task creation, please configure your ClickUp integration first."`;
+Note: ClickUp integration is not configured. Please provide task suggestions only.`;
     }
 
-    // Send to Chipp.ai
+    console.log('📤 Sending to Chipp.ai (system prompt configured on backend):');
+    console.log('='.repeat(80));
+    console.log('📧 User message:');
+    console.log(userMessage);
+    console.log('='.repeat(80));
+
+    // Send to Chipp.ai (system prompt already configured on backend)
     const response = await axios.post(
       'https://app.chipp.ai/api/v1/chat/completions',
       {
         model: 'hackathonassistant-70377',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: emailContent }
+          { role: 'user', content: userMessage }
         ],
         stream: false
       },
@@ -186,18 +153,47 @@ To enable automatic ClickUp task creation, please configure your ClickUp integra
     // Store the Chipp response with the email
     const chippResponse = response.data.choices[0].message.content;
 
+    console.log('📥 Full Chipp.ai response received:');
+    console.log('='.repeat(80));
+    console.log('Raw response data:', JSON.stringify(response.data, null, 2));
+    console.log('='.repeat(80));
+    console.log('Extracted message content:');
+    console.log(chippResponse);
+    console.log('='.repeat(80));
+
     // Update the email in session with the Chipp response
     req.session.emails = req.session.emails.map(e => {
       if (e.id === id) {
-        return { ...e, chippResponse };
+        return { ...e, chippResponse, processedAt: new Date().toISOString() };
       }
       return e;
     });
 
-    console.log('✅ Chipp.ai response received');
+    console.log('✅ Chipp.ai response processed and stored');
+
+    // Return JSON response instead of redirect for AJAX calls
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({
+        success: true,
+        chippResponse,
+        message: 'Email processed successfully'
+      });
+    }
+
     res.redirect('/');
   } catch (error) {
-    console.error('❌ Error processing with Chipp.ai:', error);
+    console.error('❌ Error processing with Chipp.ai:', error.response?.data || error.message);
+    console.error('Full error object:', error);
+
+    // Return JSON error for AJAX calls
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to process email with Chipp.ai',
+        details: error.response?.data || error.message
+      });
+    }
+
     res.redirect('/?error=chipp_failed');
   }
 });

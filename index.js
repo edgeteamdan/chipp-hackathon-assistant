@@ -4,7 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const authRoutes = require('./routes/auth');
 const emailRoutes = require('./routes/emails');
-const clickupRoutes = require('./routes/clickup');
+const clickupConfigRoutes = require('./routes/clickup-config');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,7 +27,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/emails', emailRoutes);
-app.use('/clickup', clickupRoutes);
+app.use('/clickup', clickupConfigRoutes);
 
 // Home route
 app.get('/', (req, res) => {

@@ -214,6 +214,51 @@
       border: 1px solid #6EE7B7;
       font-weight: 500;
     }
+    .loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #4F46E5;
+      font-weight: 500;
+    }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #E5E7EB;
+      border-top: 2px solid #4F46E5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .processing-status {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .processing-status.loading {
+      background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+      border: 1px solid #C7D2FE;
+    }
+    .processing-status.success {
+      background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+      border: 1px solid #6EE7B7;
+      color: #065F46;
+    }
+    .processing-status.error {
+      background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+      border: 1px solid #FCA5A5;
+      color: #DC2626;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
   </style>
 </head>
 <body>
@@ -248,6 +293,8 @@
         ClickUp authorization failed - no code received. Please try again.
       <% } else if (error === 'clickup_auth_failed') { %>
         ClickUp authentication failed. Please check your credentials and try again.
+      <% } else if (error === 'auth_required') { %>
+        Please login with Google first before connecting ClickUp.
       <% } else { %>
         An error occurred. Please try again.
       <% } %>
@@ -285,7 +332,7 @@
 
       <% if (!clickup || !clickup.access_token) { %>
         <p>Connect your ClickUp account to enable automatic task creation from emails.</p>
-        <a href="/clickup/auth" class="btn btn-clickup">🔗 Connect ClickUp</a>
+        <a href="/auth/clickup" class="btn btn-clickup">🔗 Connect ClickUp</a>
       <% } else if (!clickup.configured) { %>
         <p>Choose your default workspace and list for task creation:</p>
         <div class="workspace-selector">
@@ -313,16 +360,24 @@
           <div class="email-from">From: <%= email.from %></div>
           <div class="email-snippet"><%= email.snippet %></div>
 
-          <% if (email.chippResponse) { %>
-            <div class="chipp-response">
-              <h3>🎯 AutoTask AI Suggestion:</h3>
-              <%= email.chippResponse %>
-            </div>
-          <% } else { %>
-            <form action="/emails/process/<%= email.id %>" method="POST">
-              <button type="submit" class="btn">🚀 Create Task from Email</button>
-            </form>
-          <% } %>
+          <div id="email-<%= email.id %>-actions">
+            <% if (email.chippResponse) { %>
+              <div class="chipp-response">
+                <h3>🎯 AutoTask AI Suggestion:</h3>
+                <div class="response-content"><%= email.chippResponse %></div>
+                <% if (email.processedAt) { %>
+                  <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Processed: <%= new Date(email.processedAt).toLocaleString() %>
+                  </div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <button type="button" class="btn" onclick="processEmail('<%= email.id %>')">
+                🚀 Create Task from Email
+              </button>
+              <div id="status-<%= email.id %>" class="processing-status" style="display: none;"></div>
+            <% } %>
+          </div>
         </div>
       <% }) %>
     <% } else if (user) { %>
@@ -455,6 +510,84 @@
           window.location.reload();
         });
       }
+    }
+
+    // Email processing functions
+    async function processEmail(emailId) {
+      const button = document.querySelector(`button[onclick="processEmail('${emailId}')"]`);
+      const statusDiv = document.getElementById(`status-${emailId}`);
+      const actionsDiv = document.getElementById(`email-${emailId}-actions`);
+
+      // Disable button and show loading
+      button.disabled = true;
+      button.innerHTML = '⏳ Processing...';
+
+      statusDiv.style.display = 'block';
+      statusDiv.className = 'processing-status loading';
+      statusDiv.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>🤖 Sending email to Chipp.ai for analysis...</span>
+        </div>
+      `;
+
+      try {
+        console.log(`🚀 Starting email processing for ID: ${emailId}`);
+
+        const response = await fetch(`/emails/process/${emailId}`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          console.log('✅ Email processing successful:', data);
+
+          // Show success status
+          statusDiv.className = 'processing-status success';
+          statusDiv.innerHTML = `
+            <div>✅ Task analysis complete! Updating display...</div>
+          `;
+
+          // Wait a moment then reload to show the response
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+
+        } else {
+          console.error('❌ Email processing failed:', data);
+          throw new Error(data.error || 'Processing failed');
+        }
+
+      } catch (error) {
+        console.error('❌ Error processing email:', error);
+
+        // Show error status
+        statusDiv.className = 'processing-status error';
+        statusDiv.innerHTML = `
+          <div>❌ Error: ${error.message}</div>
+          <div style="margin-top: 8px;">
+            <button class="btn" onclick="retryProcessEmail('${emailId}')" style="font-size: 12px; padding: 6px 12px;">
+              🔄 Retry
+            </button>
+          </div>
+        `;
+
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '🚀 Create Task from Email';
+      }
+    }
+
+    function retryProcessEmail(emailId) {
+      // Reset status and retry
+      const statusDiv = document.getElementById(`status-${emailId}`);
+      statusDiv.style.display = 'none';
+      processEmail(emailId);
     }
   </script>
 </body>
