@@ -17,15 +17,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'autotask-secret-key-for-development',
-  resave: false,
-  saveUninitialized: false, // Don't save empty sessions
+  resave: true, // Force session save even if not modified
+  saveUninitialized: true, // Save empty sessions to establish session ID
   cookie: {
     secure: false, // Set to true if using HTTPS in production
     httpOnly: true, // Prevent XSS attacks
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // CSRF protection
+    sameSite: 'lax', // CSRF protection
+    path: '/' // Ensure cookie is available for all paths
   },
-  name: 'autotask.sid' // Custom session name
+  name: 'autotask.sid', // Custom session name
+  rolling: true // Reset expiration on each request
 }));
 
 // Session debugging middleware
@@ -34,16 +36,26 @@ app.use((req, res, next) => {
   const hasUser = !!req.session.user;
   const hasTokens = !!req.session.tokens;
   const hasClickUp = !!req.session.clickup;
+  const cookieHeader = req.get('Cookie');
+  const sessionCookie = cookieHeader ? cookieHeader.includes('autotask.sid') : false;
 
   console.log(`🔍 Session Debug [${req.method} ${req.path}]:`, {
     sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
     hasUser,
     hasTokens,
     hasClickUp,
+    sessionCookie,
+    cookieCount: cookieHeader ? cookieHeader.split(';').length : 0,
     userAgent: req.get('User-Agent')?.substring(0, 50) + '...'
   });
 
-  next();
+  // Force session save on every request to ensure persistence
+  req.session.save((err) => {
+    if (err) {
+      console.error('❌ Session save error:', err);
+    }
+    next();
+  });
 });
 
 // View engine
