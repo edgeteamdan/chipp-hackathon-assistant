@@ -28,6 +28,7 @@ router.post('/google/url', (req, res) => {
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
+      prompt: 'select_account', // Force account selection screen
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://www.googleapis.com/auth/userinfo.profile',
@@ -412,6 +413,8 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
 
   // Handle reset configuration
   if (reset) {
+    console.log('🔄 Resetting ClickUp configuration...');
+
     if (clickupData) {
       const updatedPayload = {
         ...req.user,
@@ -429,8 +432,29 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000
       });
+
+      // Also update in-memory store
+      if (global.userDataStore && storedData) {
+        global.userDataStore.set(userId, {
+          ...storedData,
+          clickup: {
+            ...clickupData,
+            configured: false,
+            defaultList: null
+          }
+        });
+        console.log(`💾 Reset ClickUp configuration in memory store for user: ${userId}`);
+      }
+
+      console.log('✅ ClickUp configuration reset successfully');
+      return res.json({
+        success: true,
+        message: 'Configuration reset',
+        newToken: newJwtToken
+      });
     }
-    console.log('🔄 ClickUp configuration reset');
+
+    console.log('🔄 ClickUp configuration reset (no data to update)');
     return res.json({ success: true, message: 'Configuration reset' });
   }
 

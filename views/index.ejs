@@ -337,6 +337,25 @@ function decodeHtmlEntities(text) {
       flex-shrink: 0;
       align-items: flex-end;
     }
+    .email-actions > * {
+      width: auto;
+      max-width: 100%;
+    }
+    .task-success {
+      align-self: flex-end;
+      max-width: fit-content;
+    }
+    .task-link-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+      width: 100%;
+    }
+    .processing-status {
+      align-self: flex-end;
+      max-width: fit-content;
+      text-align: right;
+    }
 
     /* Responsive email layout */
     @media (max-width: 768px) {
@@ -370,7 +389,13 @@ function decodeHtmlEntities(text) {
       .email-actions {
         min-width: auto;
         width: 100%;
-        align-items: stretch;
+        align-items: flex-end;
+      }
+      .task-success {
+        text-align: right;
+      }
+      .task-link-container {
+        justify-content: flex-end;
       }
       .email-snippet {
         margin-right: 0;
@@ -601,6 +626,8 @@ function decodeHtmlEntities(text) {
       padding: 12px;
       border-radius: 8px;
       font-size: 14px;
+      width: fit-content;
+      margin-left: auto;
     }
     .processing-status.loading {
       background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
@@ -765,11 +792,11 @@ function decodeHtmlEntities(text) {
                 <% if (email.chippResponse) { %>
                   <% if (email.clickupTaskUrl) { %>
                     <!-- ClickUp task was successfully created -->
-                    <div class="success task-success">
+                    <div class="success task-success" style="align-self: flex-end; max-width: fit-content;">
                       <span>✅ Task created successfully!</span>
                       <button class="close-btn" onclick="closeTaskSuccess('<%= email.id %>')" title="Close">&times;</button>
                     </div>
-                    <div class="task-link-container">
+                    <div class="task-link-container" style="display: flex; justify-content: flex-end;">
                       <a href="<%= email.clickupTaskUrl %>" target="_blank" class="btn btn-clickup">
                         🔗 View Task in ClickUp
                       </a>
@@ -785,7 +812,7 @@ function decodeHtmlEntities(text) {
                   <button type="button" class="btn" onclick="processEmail('<%= email.id %>')">
                     🚀 Create Task
                   </button>
-                  <div id="status-<%= email.id %>" class="processing-status" style="display: none;"></div>
+                  <div id="status-<%= email.id %>" class="processing-status" style="display: none; align-self: flex-end; max-width: fit-content; text-align: right;"></div>
                 <% } %>
               </div>
             </div>
@@ -1217,7 +1244,6 @@ function decodeHtmlEntities(text) {
 
           // Update the UI to show configured state
           updateClickUpConfiguredUI(data.defaultList);
-          alert('ClickUp configuration saved successfully!');
         } else {
           alert('Failed to save configuration: ' + data.error);
         }
@@ -1269,17 +1295,73 @@ function decodeHtmlEntities(text) {
     }
 
     function reconfigureClickUp() {
-      if (confirm('Are you sure you want to reconfigure your ClickUp integration?')) {
-        // Reset configuration
+      if (confirm('Are you sure you want to reconfigure your ClickUp integration? This will allow you to choose a different workspace or list.')) {
+        // Reset configuration and show workspace selector
         fetch('/client-auth/clickup/configure', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ reset: true })
-        }).then(() => {
-          window.location.reload();
+        }).then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update JWT token if provided
+            if (data.newToken) {
+              updateJWTCookie(data.newToken);
+            }
+
+            // Show the workspace selector again
+            showWorkspaceSelector();
+
+            // Update status to show configuration needed
+            updateClickUpStatus(
+              'Connected to ClickUp',
+              '<span style="margin-left: 10px; color: #F59E0B;">⚠️ Configuration needed</span>',
+              true
+            );
+          } else {
+            alert('Failed to reset configuration: ' + (data.error || 'Unknown error'));
+          }
+        }).catch(error => {
+          console.error('Error resetting ClickUp configuration:', error);
+          alert('Error resetting configuration. Please try again.');
         });
+      }
+    }
+
+    function showWorkspaceSelector() {
+      const clickupSection = document.querySelector('.clickup-section');
+      const clickupContent = document.getElementById('clickup-content');
+
+      if (clickupContent) {
+        // Replace the configured message with workspace selector
+        clickupContent.innerHTML = `
+          <p>Choose your default workspace and list for task creation:</p>
+          <div class="workspace-selector">
+            <select id="workspaceSelect" onchange="onWorkspaceChange()">
+              <option value="">Select a workspace...</option>
+            </select>
+            <button id="configureBtn" class="btn btn-clickup" onclick="configureClickUp()" disabled>
+              ✅ Select Default List
+            </button>
+          </div>
+        `;
+
+        // Expand the content if it's collapsed
+        if (clickupContent.classList.contains('collapsed')) {
+          clickupContent.classList.remove('collapsed');
+          clickupContent.classList.add('expanded');
+
+          // Update toggle button text
+          const toggleBtn = document.getElementById('clickup-toggle-btn');
+          if (toggleBtn) {
+            toggleBtn.textContent = '▲ Hide Details';
+          }
+        }
+
+        // Load workspaces
+        loadWorkspaces();
       }
     }
 
@@ -1291,6 +1373,9 @@ function decodeHtmlEntities(text) {
       // Disable button and show loading
       button.disabled = true;
       button.innerHTML = '⏳ Fetching Emails...';
+      button.style.alignSelf = 'flex-end'; // Maintain right alignment
+      button.style.marginLeft = 'auto'; // Push to right
+      button.style.width = 'auto'; // Don't stretch
 
       statusDiv.style.display = 'block';
       statusDiv.className = 'processing-status loading';
@@ -1355,6 +1440,9 @@ function decodeHtmlEntities(text) {
         // Re-enable button
         button.disabled = false;
         button.innerHTML = '📧 Fetch Latest Emails';
+        button.style.alignSelf = 'flex-end'; // Maintain right alignment
+        button.style.marginLeft = 'auto'; // Push to right
+        button.style.width = 'auto'; // Don't stretch
       }
     }
 
@@ -1401,11 +1489,11 @@ function decodeHtmlEntities(text) {
           if (email.clickupTaskUrl) {
             // ClickUp task was successfully created - show clean success message
             actionsHtml = `
-              <div class="success task-success">
+              <div class="success task-success" style="align-self: flex-end; max-width: fit-content;">
                 <span>✅ Task created successfully!</span>
                 <button class="close-btn" onclick="closeTaskSuccess('${email.id}')" title="Close">&times;</button>
               </div>
-              <div class="task-link-container">
+              <div class="task-link-container" style="display: flex; justify-content: flex-end;">
                 <a href="${email.clickupTaskUrl}" target="_blank" class="btn btn-clickup">
                   🔗 View Task in ClickUp
                 </a>
@@ -1426,7 +1514,7 @@ function decodeHtmlEntities(text) {
             <button type="button" class="btn" onclick="processEmail('${email.id}')">
               🚀 Create Task from Email
             </button>
-            <div id="status-${email.id}" class="processing-status" style="display: none;"></div>
+            <div id="status-${email.id}" class="processing-status" style="display: none; align-self: flex-end; max-width: fit-content; text-align: right;"></div>
           `;
         }
 
@@ -1488,6 +1576,9 @@ function decodeHtmlEntities(text) {
       // Disable button and show loading
       button.disabled = true;
       button.innerHTML = '⏳ Processing...';
+      button.style.alignSelf = 'flex-end'; // Maintain right alignment
+      button.style.marginLeft = 'auto'; // Push to right
+      button.style.width = 'auto'; // Don't stretch
 
       statusDiv.style.display = 'block';
       statusDiv.className = 'processing-status loading';
@@ -1556,6 +1647,9 @@ function decodeHtmlEntities(text) {
         // Re-enable button
         button.disabled = false;
         button.innerHTML = '🚀 Create Task from Email';
+        button.style.alignSelf = 'flex-end'; // Maintain right alignment
+        button.style.marginLeft = 'auto'; // Push to right
+        button.style.width = 'auto'; // Don't stretch
       }
     }
 
