@@ -1,7 +1,7 @@
 /* Additional custom styles for EdgeTeam Chipp Hackathon Assistant */
 
-/* Loading animation */
-.loading {
+/* Loading spinner animation */
+.spinner {
   display: inline-block;
   width: 20px;
   height: 20px;
@@ -21,18 +21,18 @@
   body {
     padding: 10px;
   }
-  
+
   .header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
   }
-  
+
   .email-header {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .user-info {
     justify-content: center;
   }
