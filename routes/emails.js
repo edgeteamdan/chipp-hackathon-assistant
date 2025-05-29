@@ -94,10 +94,22 @@ const extractEmailBody = (payload) => {
 // Get recent emails
 router.get('/recent', isAuthenticated, async (req, res) => {
   try {
+    // Check if we have client credentials in session
+    if (!req.session.clientCredentials) {
+      return res.status(401).json({ error: 'Client credentials not found. Please login again.' });
+    }
+
+    const { googleClientId, googleClientSecret } = req.session.clientCredentials;
+
+    // Build redirect URI dynamically
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const host = req.get('host');
+    const redirectUri = `${protocol}://${host}/client-auth/google/callback`;
+
     const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.REDIRECT_URI
+      googleClientId,
+      googleClientSecret,
+      redirectUri
     );
 
     oauth2Client.setCredentials(req.session.tokens);
@@ -152,6 +164,12 @@ router.get('/recent', isAuthenticated, async (req, res) => {
 router.post('/process/:id', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
+    const { chippApiKey } = req.body; // Get Chipp API key from client
+
+    if (!chippApiKey) {
+      return res.status(400).json({ error: 'Chipp API key required' });
+    }
+
     const email = req.session.emails.find(e => e.id === id);
 
     if (!email) {
@@ -224,7 +242,7 @@ Please respond with a JSON object containing the task details and analysis as sp
       requestPayload,
       {
         headers: {
-          'Authorization': `Bearer ${process.env.CHIPP_API_KEY}`,
+          'Authorization': `Bearer ${chippApiKey}`,
           'Content-Type': 'application/json'
         },
         timeout: 30000 // 30 second timeout
@@ -383,7 +401,7 @@ ClickUp integration is not configured. Please set up ClickUp to automatically cr
             },
             {
               headers: {
-                'Authorization': `Bearer ${process.env.CHIPP_API_KEY}`,
+                'Authorization': `Bearer ${chippApiKey}`,
                 'Content-Type': 'application/json'
               },
               timeout: 30000

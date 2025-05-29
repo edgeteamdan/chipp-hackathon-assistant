@@ -668,12 +668,21 @@
       try {
         console.log(`🚀 Starting email processing for ID: ${emailId}`);
 
+        // Get Chipp API key from localStorage
+        const chippApiKey = localStorage.getItem('autotask_chipp_api_key');
+        if (!chippApiKey) {
+          throw new Error('Chipp API key not found. Please configure it in Settings.');
+        }
+
         const response = await fetch(`/emails/process/${emailId}`, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            chippApiKey: chippApiKey
+          })
         });
 
         const data = await response.json();
