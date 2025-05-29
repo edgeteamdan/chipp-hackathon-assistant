@@ -165,6 +165,55 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    .clickup-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .clickup-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .status-connected { background: #10B981; }
+    .status-disconnected { background: #EF4444; }
+    .btn-clickup {
+      background: linear-gradient(135deg, #7B68EE 0%, #9370DB 100%);
+      box-shadow: 0 4px 16px rgba(123, 104, 238, 0.3);
+    }
+    .btn-clickup:hover {
+      box-shadow: 0 8px 24px rgba(123, 104, 238, 0.4);
+    }
+    .workspace-selector {
+      margin-top: 15px;
+    }
+    .workspace-selector select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #D1D5DB;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .success {
+      background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+      color: #065F46;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #6EE7B7;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -195,15 +244,62 @@
         Failed to fetch emails. Please try again.
       <% } else if (error === 'chipp_failed') { %>
         Failed to process with Chipp.ai. Please try again.
+      <% } else if (error === 'clickup_no_code') { %>
+        ClickUp authorization failed - no code received. Please try again.
+      <% } else if (error === 'clickup_auth_failed') { %>
+        ClickUp authentication failed. Please check your credentials and try again.
       <% } else { %>
         An error occurred. Please try again.
       <% } %>
     </div>
   <% } %>
 
+  <% if (clickupAuth === 'success') { %>
+    <div class="success">
+      ✅ ClickUp authentication successful! Please configure your default workspace below.
+    </div>
+  <% } %>
+
   <% if (user) { %>
     <div class="actions">
       <a href="/emails/recent" class="btn">📧 Fetch Latest 5 Emails</a>
+    </div>
+
+    <!-- ClickUp Integration Section -->
+    <div class="clickup-section">
+      <h3>🔗 ClickUp Integration</h3>
+      <div class="clickup-status">
+        <% if (clickup && clickup.access_token) { %>
+          <div class="status-indicator status-connected"></div>
+          <span>Connected to ClickUp</span>
+          <% if (clickup.configured && clickup.defaultList) { %>
+            <span style="margin-left: 10px; color: #10B981;">✓ Configured (Default: <%= clickup.defaultList.name %>)</span>
+          <% } else { %>
+            <span style="margin-left: 10px; color: #F59E0B;">⚠️ Configuration needed</span>
+          <% } %>
+        <% } else { %>
+          <div class="status-indicator status-disconnected"></div>
+          <span>Not connected to ClickUp</span>
+        <% } %>
+      </div>
+
+      <% if (!clickup || !clickup.access_token) { %>
+        <p>Connect your ClickUp account to enable automatic task creation from emails.</p>
+        <a href="/clickup/auth" class="btn btn-clickup">🔗 Connect ClickUp</a>
+      <% } else if (!clickup.configured) { %>
+        <p>Choose your default workspace and list for task creation:</p>
+        <div class="workspace-selector">
+          <select id="workspaceSelect" onchange="onWorkspaceChange()">
+            <option value="">Select a workspace...</option>
+          </select>
+          <button id="configureBtn" class="btn btn-clickup" onclick="configureClickUp()" disabled>
+            ✅ Configure Default List
+          </button>
+        </div>
+      <% } else { %>
+        <p>✅ ClickUp is configured and ready! Tasks will be created in: <strong><%= clickup.defaultList.name %></strong></p>
+        <button class="btn btn-clickup" onclick="reconfigureClickUp()">🔄 Reconfigure</button>
+      <% } %>
     </div>
 
     <% if (emails && emails.length > 0) { %>
@@ -251,5 +347,115 @@
       <p><strong>Login with your Google account to experience the future of email productivity.</strong></p>
     </div>
   <% } %>
+
+  <script>
+    let workspaces = [];
+    let selectedWorkspace = null;
+
+    // Load workspaces when page loads if ClickUp is connected but not configured
+    <% if (user && clickup && clickup.access_token && !clickup.configured) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        loadWorkspaces();
+      });
+    <% } %>
+
+    async function loadWorkspaces() {
+      try {
+        const response = await fetch('/clickup/workspaces');
+        const data = await response.json();
+
+        if (data.workspaces) {
+          workspaces = data.workspaces;
+          populateWorkspaceSelect();
+        } else {
+          console.error('Failed to load workspaces:', data.error);
+        }
+      } catch (error) {
+        console.error('Error loading workspaces:', error);
+      }
+    }
+
+    function populateWorkspaceSelect() {
+      const select = document.getElementById('workspaceSelect');
+      select.innerHTML = '<option value="">Select a workspace...</option>';
+
+      workspaces.forEach((workspace, index) => {
+        workspace.lists.forEach(list => {
+          const option = document.createElement('option');
+          option.value = JSON.stringify({
+            listId: list.id,
+            listName: list.name,
+            spaceName: workspace.space.name,
+            teamName: workspace.team.name,
+            workspaceIndex: index
+          });
+          option.textContent = `${workspace.team.name} > ${workspace.space.name} > ${list.name}`;
+          select.appendChild(option);
+        });
+      });
+    }
+
+    function onWorkspaceChange() {
+      const select = document.getElementById('workspaceSelect');
+      const configureBtn = document.getElementById('configureBtn');
+
+      if (select.value) {
+        selectedWorkspace = JSON.parse(select.value);
+        configureBtn.disabled = false;
+      } else {
+        selectedWorkspace = null;
+        configureBtn.disabled = true;
+      }
+    }
+
+    async function configureClickUp() {
+      if (!selectedWorkspace) {
+        alert('Please select a workspace first');
+        return;
+      }
+
+      try {
+        const response = await fetch('/clickup/configure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            listId: selectedWorkspace.listId,
+            listName: selectedWorkspace.listName,
+            spaceName: selectedWorkspace.spaceName,
+            teamName: selectedWorkspace.teamName
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert('ClickUp configuration saved successfully!');
+          window.location.reload();
+        } else {
+          alert('Failed to save configuration: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error configuring ClickUp:', error);
+        alert('Error configuring ClickUp. Please try again.');
+      }
+    }
+
+    function reconfigureClickUp() {
+      if (confirm('Are you sure you want to reconfigure your ClickUp integration?')) {
+        // Reset configuration
+        fetch('/clickup/configure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reset: true })
+        }).then(() => {
+          window.location.reload();
+        });
+      }
+    }
+  </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const authRoutes = require('./routes/auth');
 const emailRoutes = require('./routes/emails');
+const clickupRoutes = require('./routes/clickup');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,13 +27,16 @@ app.set('views', path.join(__dirname, 'views'));
 // Routes
 app.use('/auth', authRoutes);
 app.use('/emails', emailRoutes);
+app.use('/clickup', clickupRoutes);
 
 // Home route
 app.get('/', (req, res) => {
   res.render('index', {
     user: req.session.user || null,
     emails: req.session.emails || [],
-    error: req.query.error || null
+    error: req.query.error || null,
+    clickup: req.session.clickup || null,
+    clickupAuth: req.query.clickup_auth || null
   });
 });
 
