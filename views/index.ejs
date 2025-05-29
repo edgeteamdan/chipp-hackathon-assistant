@@ -32,7 +32,9 @@
       flex-wrap: nowrap;
       min-height: 60px;
       width: 100%;
-      position: relative;
+      position: sticky;
+      top: 20px;
+      z-index: 100000;
       box-sizing: border-box;
       gap: 20px;
     }
@@ -89,6 +91,7 @@
     .user-dropdown {
       position: relative;
       display: inline-block;
+      z-index: 10000;
     }
     .user-profile-btn {
       display: flex;
@@ -132,7 +135,7 @@
       box-shadow: 0 8px 32px rgba(245, 158, 11, 0.2);
       border: 1px solid rgba(245, 158, 11, 0.2);
       min-width: 180px;
-      z-index: 9999;
+      z-index: 99999;
       opacity: 0;
       visibility: hidden;
       transform: translateY(-10px);
@@ -447,6 +450,28 @@
       box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1);
       border: 1px solid rgba(245, 158, 11, 0.2);
     }
+    .clickup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .clickup-header h3 {
+      margin: 0;
+    }
+    .clickup-content {
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    .clickup-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: 0;
+    }
+    .clickup-content.expanded {
+      max-height: 500px;
+      opacity: 1;
+    }
     .clickup-status {
       display: flex;
       align-items: center;
@@ -651,7 +676,15 @@
 
     <!-- ClickUp Integration Section -->
     <div class="clickup-section">
-      <h3>🔗 ClickUp Integration</h3>
+      <div class="clickup-header">
+        <h3>🔗 ClickUp Integration</h3>
+        <% if (clickup && clickup.access_token && clickup.configured && clickup.defaultList) { %>
+          <button type="button" onclick="toggleClickUpSection()" class="btn btn-secondary" id="clickup-toggle-btn" style="padding: 8px 16px; font-size: 14px;">
+            ▼ Show Details
+          </button>
+        <% } %>
+      </div>
+
       <div class="clickup-status">
         <div class="status-indicator <% if (clickup && clickup.access_token) { %>status-connected<% } else { %>status-disconnected<% } %>"></div>
         <span id="clickup-status-text">
@@ -672,6 +705,8 @@
         </span>
       </div>
 
+      <div class="clickup-content <% if (clickup && clickup.access_token && clickup.configured && clickup.defaultList) { %>collapsed<% } else { %>expanded<% } %>" id="clickup-content">
+
       <% if (!clickup || !clickup.access_token) { %>
         <p>Connect your ClickUp account to enable automatic task creation from emails.</p>
         <button class="btn btn-clickup" onclick="connectClickUp()">🔗 Connect ClickUp</button>
@@ -689,6 +724,7 @@
         <p>✅ ClickUp is configured and ready! Tasks will be created in: <strong><%= clickup.defaultList.name %></strong></p>
         <button class="btn btn-clickup" onclick="reconfigureClickUp()">🔄 Reconfigure</button>
       <% } %>
+      </div>
     </div>
 
     <% if (emails && emails.length > 0) { %>
@@ -1194,6 +1230,26 @@
         `;
         workspaceSelector.parentNode.replaceChild(configuredDiv, workspaceSelector);
       }
+
+      // Add toggle button to header if it doesn't exist
+      const clickupHeader = clickupSection.querySelector('.clickup-header');
+      if (clickupHeader && !clickupHeader.querySelector('#clickup-toggle-btn')) {
+        const toggleButton = document.createElement('button');
+        toggleButton.type = 'button';
+        toggleButton.onclick = toggleClickUpSection;
+        toggleButton.className = 'btn btn-secondary';
+        toggleButton.id = 'clickup-toggle-btn';
+        toggleButton.style.cssText = 'padding: 8px 16px; font-size: 14px;';
+        toggleButton.textContent = '▼ Show Details';
+        clickupHeader.appendChild(toggleButton);
+
+        // Collapse the content
+        const content = document.getElementById('clickup-content');
+        if (content) {
+          content.classList.remove('expanded');
+          content.classList.add('collapsed');
+        }
+      }
     }
 
     function reconfigureClickUp() {
@@ -1502,6 +1558,22 @@
     function toggleUserDropdown() {
       const dropdown = document.querySelector('.user-dropdown');
       dropdown.classList.toggle('open');
+    }
+
+    // ClickUp section toggle functionality
+    function toggleClickUpSection() {
+      const content = document.getElementById('clickup-content');
+      const button = document.getElementById('clickup-toggle-btn');
+
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        content.classList.add('expanded');
+        button.textContent = '▲ Hide Details';
+      } else {
+        content.classList.remove('expanded');
+        content.classList.add('collapsed');
+        button.textContent = '▼ Show Details';
+      }
     }
 
     // Close dropdown when clicking outside
