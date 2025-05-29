@@ -39,9 +39,32 @@ const sanitizeEmailContent = (email) => {
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req, res, next) => {
+  console.log('🔐 Authentication check:', {
+    hasSession: !!req.session,
+    hasTokens: !!req.session?.tokens,
+    hasUser: !!req.session?.user,
+    hasClientCredentials: !!req.session?.clientCredentials,
+    sessionId: req.sessionID ? req.sessionID.substring(0, 8) + '...' : 'none'
+  });
+
   if (!req.session.tokens) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    console.log('❌ Authentication failed: No tokens in session');
+    return res.status(401).json({
+      error: 'Not authenticated',
+      details: 'Session tokens not found. Please login again.',
+      sessionId: req.sessionID
+    });
   }
+
+  if (!req.session.clientCredentials) {
+    console.log('❌ Authentication failed: No client credentials in session');
+    return res.status(401).json({
+      error: 'Client credentials not found',
+      details: 'Please login again to restore session.',
+      sessionId: req.sessionID
+    });
+  }
+
   next();
 };
 
@@ -94,11 +117,6 @@ const extractEmailBody = (payload) => {
 // Get recent emails
 router.get('/recent', isAuthenticated, async (req, res) => {
   try {
-    // Check if we have client credentials in session
-    if (!req.session.clientCredentials) {
-      return res.status(401).json({ error: 'Client credentials not found. Please login again.' });
-    }
-
     const { googleClientId, googleClientSecret } = req.session.clientCredentials;
 
     // Build redirect URI dynamically
@@ -152,8 +170,18 @@ router.get('/recent', isAuthenticated, async (req, res) => {
 
     // Store in session and return
     req.session.emails = emails;
-    console.log(`✅ Fetched ${emails.length} emails`);
-    res.redirect('/');
+
+    // Explicitly save session to ensure persistence
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ Error saving emails session:', err);
+        return res.redirect('/?error=session_save_failed');
+      }
+
+      console.log(`✅ Fetched ${emails.length} emails and saved to session`);
+      console.log(`🔒 Emails session saved with ID: ${req.sessionID}`);
+      res.redirect('/');
+    });
   } catch (error) {
     console.error('❌ Error fetching emails:', error);
     res.redirect('/?error=fetch_failed');

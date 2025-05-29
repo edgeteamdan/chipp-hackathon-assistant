@@ -88,8 +88,17 @@ router.get('/google/callback', async (req, res) => {
       googleClientSecret
     };
 
-    console.log(`✅ User authenticated with client credentials: ${userInfo.data.email}`);
-    res.redirect('/');
+    // Explicitly save session to ensure persistence
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ Error saving session:', err);
+        return res.redirect('/?error=session_save_failed');
+      }
+
+      console.log(`✅ User authenticated with client credentials: ${userInfo.data.email}`);
+      console.log(`🔒 Session saved with ID: ${req.sessionID}`);
+      res.redirect('/');
+    });
   } catch (error) {
     console.error('❌ Error during client authentication:', error);
     res.redirect('/?error=auth_failed');
@@ -183,8 +192,17 @@ router.get('/clickup/callback', async (req, res) => {
     // Clear pending auth
     delete req.session.pendingClickUpAuth;
 
-    console.log('✅ ClickUp authentication successful with client credentials');
-    res.redirect('/?clickup_auth=success');
+    // Explicitly save session to ensure persistence
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ Error saving ClickUp session:', err);
+        return res.redirect('/?error=clickup_session_save_failed');
+      }
+
+      console.log('✅ ClickUp authentication successful with client credentials');
+      console.log(`🔒 ClickUp session saved with ID: ${req.sessionID}`);
+      res.redirect('/?clickup_auth=success');
+    });
 
   } catch (error) {
     console.error('❌ Error during ClickUp client authentication:', error);
@@ -210,7 +228,16 @@ router.post('/clickup/prepare', (req, res) => {
     clientSecret: clickupClientSecret
   };
 
-  res.json({ success: true, message: 'ClickUp credentials prepared for OAuth' });
+  // Explicitly save session to ensure persistence
+  req.session.save((err) => {
+    if (err) {
+      console.error('❌ Error saving ClickUp preparation session:', err);
+      return res.status(500).json({ error: 'Failed to save session' });
+    }
+
+    console.log(`🔒 ClickUp credentials prepared and session saved with ID: ${req.sessionID}`);
+    res.json({ success: true, message: 'ClickUp credentials prepared for OAuth' });
+  });
 });
 
 // Middleware to check if user is authenticated
@@ -314,11 +341,20 @@ router.post('/clickup/configure', isAuthenticated, async (req, res) => {
       teamName
     };
 
-    console.log(`✅ ClickUp configured - Default list: ${listName} (${listId})`);
-    res.json({
-      success: true,
-      message: 'ClickUp configuration saved',
-      defaultList: req.session.clickup.defaultList
+    // Explicitly save session to ensure persistence
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ Error saving ClickUp configuration session:', err);
+        return res.status(500).json({ error: 'Failed to save session' });
+      }
+
+      console.log(`✅ ClickUp configured - Default list: ${listName} (${listId})`);
+      console.log(`🔒 ClickUp configuration session saved with ID: ${req.sessionID}`);
+      res.json({
+        success: true,
+        message: 'ClickUp configuration saved',
+        defaultList: req.session.clickup.defaultList
+      });
     });
 
   } catch (error) {

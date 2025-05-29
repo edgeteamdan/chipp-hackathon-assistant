@@ -16,11 +16,35 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'autotask-secret',
+  secret: process.env.SESSION_SECRET || 'autotask-secret-key-for-development',
   resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Set to true if using HTTPS
+  saveUninitialized: false, // Don't save empty sessions
+  cookie: {
+    secure: false, // Set to true if using HTTPS in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // CSRF protection
+  },
+  name: 'autotask.sid' // Custom session name
 }));
+
+// Session debugging middleware
+app.use((req, res, next) => {
+  const sessionId = req.sessionID;
+  const hasUser = !!req.session.user;
+  const hasTokens = !!req.session.tokens;
+  const hasClickUp = !!req.session.clickup;
+
+  console.log(`🔍 Session Debug [${req.method} ${req.path}]:`, {
+    sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
+    hasUser,
+    hasTokens,
+    hasClickUp,
+    userAgent: req.get('User-Agent')?.substring(0, 50) + '...'
+  });
+
+  next();
+});
 
 // View engine
 app.set('view engine', 'ejs');
