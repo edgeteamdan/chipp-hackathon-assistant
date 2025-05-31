@@ -685,22 +685,41 @@ function decodeHtmlEntities(text) {
   </div>
 
   <% if (error) { %>
-    <div class="error">
-      <% if (error === 'auth_failed') { %>
-        Authentication failed. Please try again.
-      <% } else if (error === 'fetch_failed') { %>
-        Failed to fetch emails. Please try again.
-      <% } else if (error === 'chipp_failed') { %>
-        Failed to process with Chipp.ai. Please try again.
-      <% } else if (error === 'clickup_no_code') { %>
-        ClickUp authorization failed - no code received. Please try again.
-      <% } else if (error === 'clickup_auth_failed') { %>
-        ClickUp authentication failed. Please check your credentials and try again.
-      <% } else if (error === 'auth_required') { %>
-        Please login with Google first before connecting ClickUp.
-      <% } else { %>
-        An error occurred. Please try again.
-      <% } %>
+    <div class="error" id="error-message">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
+        <div style="flex: 1;">
+          <% if (error === 'auth_failed') { %>
+            <strong>Authentication failed.</strong><br>
+            This usually means your Google OAuth credentials are incorrect or expired.
+          <% } else if (error === 'fetch_failed') { %>
+            <strong>Failed to fetch emails.</strong><br>
+            Your authentication may have expired or your credentials are invalid.
+          <% } else if (error === 'chipp_failed') { %>
+            <strong>Failed to process with Chipp.ai.</strong><br>
+            Please check your Chipp API key in Settings.
+          <% } else if (error === 'clickup_no_code') { %>
+            <strong>ClickUp authorization failed.</strong><br>
+            No authorization code received. Please try again.
+          <% } else if (error === 'clickup_auth_failed') { %>
+            <strong>ClickUp authentication failed.</strong><br>
+            Please check your ClickUp credentials in Settings.
+          <% } else if (error === 'auth_required') { %>
+            <strong>Authentication required.</strong><br>
+            Please login with Google first before connecting ClickUp.
+          <% } else { %>
+            <strong>An error occurred.</strong><br>
+            Please try again or clear your credentials if the problem persists.
+          <% } %>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+          <% if (error === 'auth_failed' || error === 'fetch_failed') { %>
+            <button class="btn btn-secondary" onclick="clearCredentialsAndRetry()" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">
+              🔄 Clear & Retry
+            </button>
+          <% } %>
+          <button class="close-btn" onclick="closeErrorMessage()" title="Close" style="background: none; border: none; color: #DC2626; font-size: 18px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+        </div>
+      </div>
     </div>
   <% } %>
 
@@ -1404,11 +1423,24 @@ function decodeHtmlEntities(text) {
             updateJWTCookie(data.newToken);
           }
 
-          // Show success status
+          // Store emails in sessionStorage for serverless environments
+          if (data.emails && data.emails.length > 0) {
+            try {
+              sessionStorage.setItem('autotask_current_emails', JSON.stringify(data.emails));
+              console.log(`💾 Stored ${data.emails.length} emails in sessionStorage for serverless compatibility`);
+            } catch (storageError) {
+              console.warn('⚠️ Failed to store emails in sessionStorage:', storageError);
+            }
+          }
+
+          // Show success status with warning if applicable
+          let successMessage = `✅ Successfully fetched ${data.emailCount} emails! Updating display...`;
+          if (data.warning) {
+            successMessage += `<br><small style="color: #F59E0B;">⚠️ ${data.warning}</small>`;
+          }
+
           statusDiv.className = 'processing-status success';
-          statusDiv.innerHTML = `
-            <div>✅ Successfully fetched ${data.emailCount} emails! Updating display...</div>
-          `;
+          statusDiv.innerHTML = `<div>${successMessage}</div>`;
 
           // Update the UI with the fetched emails
           setTimeout(() => {
@@ -1598,6 +1630,18 @@ function decodeHtmlEntities(text) {
           throw new Error('Chipp API key not found. Please configure it in Settings.');
         }
 
+        // Get stored emails from sessionStorage for serverless compatibility
+        let storedEmails = null;
+        try {
+          const emailsJson = sessionStorage.getItem('autotask_current_emails');
+          if (emailsJson) {
+            storedEmails = JSON.parse(emailsJson);
+            console.log(`📧 Found ${storedEmails.length} emails in sessionStorage for processing`);
+          }
+        } catch (storageError) {
+          console.warn('⚠️ Failed to retrieve emails from sessionStorage:', storageError);
+        }
+
         const response = await fetch(`/emails/process/${emailId}`, {
           method: 'POST',
           headers: {
@@ -1605,7 +1649,9 @@ function decodeHtmlEntities(text) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            chippApiKey: chippApiKey
+            chippApiKey: chippApiKey,
+            // Include stored emails for serverless environments
+            storedEmails: storedEmails
           })
         });
 
@@ -1712,6 +1758,100 @@ function decodeHtmlEntities(text) {
         dropdown.classList.remove('open');
       }
     });
+
+    // Function to clear all authentication and force fresh login
+    function clearAuthAndRelogin() {
+      // Clear all localStorage items
+      localStorage.removeItem('autotask_chipp_api_key');
+      localStorage.removeItem('autotask_google_client_id');
+      localStorage.removeItem('autotask_google_client_secret');
+      localStorage.removeItem('autotask_clickup_client_id');
+      localStorage.removeItem('autotask_clickup_client_secret');
+
+      // Clear server-side authentication
+      fetch('/auth/logout', { method: 'GET' })
+        .then(() => {
+          // Reload the page to start fresh
+          window.location.reload();
+        })
+        .catch(error => {
+          console.error('Error during logout:', error);
+          // Force reload anyway
+          window.location.reload();
+        });
+    }
+
+    // Function to clear credentials and retry authentication
+    function clearCredentialsAndRetry() {
+      // Show loading state
+      const errorDiv = document.getElementById('error-message');
+      if (errorDiv) {
+        errorDiv.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="spinner"></div>
+            <span>🔄 Clearing credentials and preparing for fresh login...</span>
+          </div>
+        `;
+      }
+
+      // Clear all localStorage items
+      localStorage.removeItem('autotask_chipp_api_key');
+      localStorage.removeItem('autotask_google_client_id');
+      localStorage.removeItem('autotask_google_client_secret');
+      localStorage.removeItem('autotask_clickup_client_id');
+      localStorage.removeItem('autotask_clickup_client_secret');
+
+      // Clear server-side authentication and redirect to settings
+      fetch('/auth/logout', { method: 'GET' })
+        .then(() => {
+          // Redirect to settings page for fresh setup
+          window.location.href = '/settings?cleared=true';
+        })
+        .catch(error => {
+          console.error('Error during logout:', error);
+          // Force redirect anyway
+          window.location.href = '/settings?cleared=true';
+        });
+    }
+
+    // Function to close error message
+    function closeErrorMessage() {
+      const errorDiv = document.getElementById('error-message');
+      if (errorDiv) {
+        errorDiv.style.opacity = '0';
+        setTimeout(() => {
+          errorDiv.remove();
+        }, 300);
+      }
+    }
+
+    // Auto-detect authentication errors and show helpful messages
+    function detectAuthErrors() {
+      // Check if we're getting repeated auth failures
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+
+      if (error === 'auth_failed' || error === 'fetch_failed') {
+        // Check if this is a repeated error (stored in sessionStorage)
+        const errorCount = parseInt(sessionStorage.getItem('auth_error_count') || '0');
+        sessionStorage.setItem('auth_error_count', (errorCount + 1).toString());
+
+        if (errorCount >= 2) {
+          // After 3 failed attempts, automatically suggest clearing credentials
+          setTimeout(() => {
+            if (confirm('You\'ve had multiple authentication failures. Would you like to clear your stored credentials and start fresh? This will redirect you to the Settings page.')) {
+              clearCredentialsAndRetry();
+            }
+          }, 1000);
+        }
+      } else {
+        // Clear error count on successful page load
+        sessionStorage.removeItem('auth_error_count');
+      }
+    }
+
+    // Run error detection on page load
+    window.addEventListener('DOMContentLoaded', detectAuthErrors);
 
     // Auto-fade success message after 8 seconds
     <% if (clickupAuth === 'success') { %>

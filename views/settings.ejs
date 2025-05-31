@@ -258,6 +258,11 @@
       ✅ Settings saved successfully! Your credentials are stored locally in your browser.
     </div>
 
+    <div id="cleared-message" class="success" style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); color: #92400E; border: 1px solid #F59E0B; display: none;">
+      🔄 <strong>Credentials Cleared!</strong><br>
+      Your authentication credentials have been cleared due to authentication errors. Please re-enter your API credentials below and try logging in again.
+    </div>
+
     <!-- Import Options -->
     <div class="import-section" style="margin-bottom: 32px; padding: 24px; background: rgba(255, 255, 255, 0.7); border-radius: 12px; border-left: 4px solid #10B981;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -360,7 +365,26 @@ CLICKUP_CLIENT_SECRET=XXXXXXXX" style="width: 100%; height: 120px; padding: 12px
     window.addEventListener('DOMContentLoaded', function() {
       loadSettings();
       loadCallbackUrls();
+      checkIfClearedCredentials();
     });
+
+    // Check if user was redirected here after clearing credentials
+    function checkIfClearedCredentials() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('cleared') === 'true') {
+        const clearedMessage = document.getElementById('cleared-message');
+        clearedMessage.style.display = 'block';
+
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          clearedMessage.style.display = 'none';
+        }, 10000);
+
+        // Remove the parameter from URL without refreshing
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
 
     // Toggle import section visibility
     function toggleImportSection() {
